@@ -38,6 +38,8 @@ export class ApiRequestError extends Error {
 export interface RequestOptions {
   /** Skip the global 401 handler (used by login, where 401 means bad credentials). */
   skipUnauthorizedHandler?: boolean
+  /** Do not send the bearer token (public endpoints reject a stale token with 401). */
+  anonymous?: boolean
 }
 
 export function buildQuery(params: Record<string, string | undefined>): string {
@@ -57,7 +59,7 @@ export async function apiRequest<T>(
 ): Promise<T> {
   const headers: Record<string, string> = { Accept: 'application/json' }
   if (body !== undefined) headers['Content-Type'] = 'application/json'
-  const token = handlers.getToken()
+  const token = options.anonymous ? null : handlers.getToken()
   if (token) headers.Authorization = `Bearer ${token}`
 
   let response: Response

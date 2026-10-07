@@ -116,6 +116,13 @@ describe('Login (UI7-UI9, banners)', () => {
     expect(await screen.findByText('Your account is disabled. Contact the administrator.')).toBeInTheDocument()
   })
 
+  it('shows the disabled message when the server answers 401 "Account is disabled"', async () => {
+    mockApi({ 'POST /api/auth/login': errorResponse(401, 'Account is disabled') })
+    renderApp('/login')
+    await login()
+    expect(await screen.findByText('Your account is disabled. Contact the administrator.')).toBeInTheDocument()
+  })
+
   it.each([
     ['USER', '/tasks'],
     ['ADMIN', '/admin/users'],

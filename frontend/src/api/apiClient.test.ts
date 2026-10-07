@@ -31,6 +31,12 @@ describe('apiClient (U18)', () => {
     expect(init?.body).toBe('{"a":1}')
   })
 
+  it('omits the bearer token for anonymous requests', async () => {
+    const spy = mockFetch(json({}))
+    await apiRequest('POST', '/api/auth/login', {}, { anonymous: true })
+    expect(spy.mock.calls[0][1]?.headers).not.toHaveProperty('Authorization')
+  })
+
   it('reports renewed tokens from response headers', async () => {
     mockFetch(json([], 200, { 'X-Auth-Token': 'new', 'X-Auth-Expires-In': '3600' }))
     await apiRequest('GET', '/api/tasks')
