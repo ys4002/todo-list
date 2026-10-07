@@ -263,7 +263,7 @@ class AdminApiQaTest extends QaSupport {
         // not visible to Alice
         assertThat(status(get("/api/tasks/" + own, alice))).isEqualTo(404);
 
-        MvcResult invalid = post(usersUrl(aliceId) + "/tasks", admin, map("title", "", "dueAt", "bad"));
+        MvcResult invalid = post(usersUrl(aliceId) + "/tasks", admin, map("title", "", "dueAt", isoIn(1, ChronoUnit.DAYS)));
         assertThat(status(invalid)).isEqualTo(400);
         assertThat(fieldMessages(invalid, "title")).isNotEmpty();
         MvcResult past = post(usersUrl(aliceId) + "/tasks", admin, taskBody("p", null, isoIn(-2, ChronoUnit.HOURS)));

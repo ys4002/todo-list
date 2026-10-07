@@ -82,7 +82,7 @@ abstract class QaSupport {
     }
 
     protected MvcResult call(HttpMethod method, String url, String token, Object body) throws Exception {
-        MockHttpServletRequestBuilder builder = request(method, url);
+        MockHttpServletRequestBuilder builder = request(method, java.net.URI.create(url));  // URI: no re-encoding of %XX
         if (token != null) {
             builder.header("Authorization", "Bearer " + token);
         }
