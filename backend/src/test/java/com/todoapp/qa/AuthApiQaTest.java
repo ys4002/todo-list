@@ -199,4 +199,21 @@ class AuthApiQaTest extends QaSupport {
             assertThat(hasMessage(result, "Authentication required")).as("token=%s", token).isTrue();
         }
     }
+
+    /**
+     * Known behaviour (low severity, documented): permitAll endpoints still validate a bearer token
+     * when one is sent, so a stale/invalid token on login or register yields 401 instead of ignoring it.
+     * The frontend no longer sends a token on these calls. If this is fixed, update the expectation to 200/201.
+     */
+    @Test
+    void known_staleBearerTokenOnPublicEndpointsGives401() throws Exception {
+        registerUser(ALICE, ALICE_PASSWORD);
+        MvcResult login = post("/api/auth/login", "garbage.token.value", map("username", ALICE, "password", ALICE_PASSWORD));
+        assertThat(status(login)).isEqualTo(401);
+        MvcResult register = register(BOB, "Bob", BOB_PASSWORD, BOB_PASSWORD) ;
+        assertThat(status(register)).isEqualTo(201); // without a token it works
+        MvcResult withToken = post("/api/auth/register", expiredToken(ALICE),
+                map("username", "carol_03", "name", "Carol", "password", "C4rol#Pass1", "confirmPassword", "C4rol#Pass1"));
+        assertThat(status(withToken)).isEqualTo(401);
+    }
 }
