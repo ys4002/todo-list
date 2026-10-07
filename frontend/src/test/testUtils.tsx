@@ -81,3 +81,24 @@ export function lastBody(spy: ReturnType<typeof mockApi>, method: string, path: 
   const calls = fetchCalls(spy, method, path)
   return JSON.parse(String(calls[calls.length - 1][1]?.body))
 }
+
+import type { Task } from '../api/types'
+
+let nextTaskId = 1
+export function makeTask(overrides: Partial<Task> = {}): Task {
+  const id = overrides.id ?? nextTaskId++
+  return {
+    id,
+    title: `Task ${id}`,
+    description: null,
+    dueAt: new Date(Date.now() + 86_400_000).toISOString(),
+    completed: false,
+    completedAt: null,
+    overdue: false,
+    createdAt: '2026-10-07T14:05:00Z',
+    updatedAt: '2026-10-07T14:05:00Z',
+    ...overrides,
+  }
+}
+
+export const hoursFromNow = (hours: number) => new Date(Date.now() + hours * 3_600_000).toISOString()
