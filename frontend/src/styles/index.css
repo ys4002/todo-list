@@ -1,0 +1,37 @@
+:root {
+  --bg: #f6f7f9;
+  --surface: #fff;
+  --text: #1f2430;
+  --muted: #667085;
+  --border: #d5d9e0;
+  --primary: #3b5bdb;
+  --danger: #c92a2a;
+  --success: #2b8a3e;
+  --warning: #e8590c;
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color: var(--text);
+  background: var(--bg);
+}
+* { box-sizing: border-box; }
+body { margin: 0; }
+.container { max-width: 860px; margin: 0 auto; padding: 16px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+.app-header { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; background: var(--surface); border-bottom: 1px solid var(--border); padding: 8px 16px; }
+.app-header nav { display: flex; gap: 12px; flex-wrap: wrap; }
+.field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
+.field input, .field textarea { font: inherit; padding: 8px; border: 1px solid var(--border); border-radius: 6px; width: 100%; }
+.field-error, .error-banner { color: var(--danger); font-size: 0.9rem; }
+.success-banner { color: var(--success); background: #ebfbee; padding: 8px 12px; border-radius: 6px; margin-bottom: 12px; }
+.error-banner { background: #fff5f5; padding: 8px 12px; border-radius: 6px; margin-bottom: 12px; }
+button { font: inherit; padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); cursor: pointer; }
+button.primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+button.danger { color: var(--danger); }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+.badge { font-size: 0.75rem; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border); }
+.badge.overdue, .badge.disabled { color: var(--danger); border-color: var(--danger); }
+.badge.enabled { color: var(--success); border-color: var(--success); }
+.task-item { display: flex; gap: 12px; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.task-item.completed .task-title { text-decoration: line-through; color: var(--muted); }
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--border); }
+@media (max-width: 600px) { .container { padding: 8px; } table { display: block; overflow-x: auto; } }
