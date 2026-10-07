@@ -3,6 +3,7 @@ package com.todoapp.user;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -37,8 +38,12 @@ public class AdminSeeder implements ApplicationRunner {
 
     public void seed() {
         if (!userRepository.existsByUsername(adminUsername)) {
-            userRepository.save(new User(adminUsername, "Administrator", passwordEncoder.encode(adminPassword), Role.ADMIN));
-            log.info("Seeded admin user '{}'", adminUsername);
+            try {
+                userRepository.save(new User(adminUsername, "Administrator", passwordEncoder.encode(adminPassword), Role.ADMIN));
+                log.info("Seeded admin user '{}'", adminUsername);
+            } catch (DataIntegrityViolationException ex) {
+                log.info("Admin user '{}' was created concurrently; nothing to seed", adminUsername);
+            }
         }
         userRepository.findByUsername(adminUsername)
                 .filter(admin -> passwordEncoder.matches(DEFAULT_PASSWORD, admin.getPasswordHash()))
