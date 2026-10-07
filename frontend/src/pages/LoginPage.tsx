@@ -39,8 +39,11 @@ export default function LoginPage() {
       navigate(homePathFor(user.role), { replace: true })
     } catch (error) {
       setPending(false)
-      if (error instanceof ApiRequestError && error.status === 403) setFormError(DISABLED_TEXT)
-      else setFormError(error instanceof Error ? error.message : 'Something went wrong')
+      if (error instanceof ApiRequestError && (error.status === 403 || error.message === 'Account is disabled')) {
+        setFormError(DISABLED_TEXT)
+      } else {
+        setFormError(error instanceof Error ? error.message : 'Something went wrong')
+      }
     }
   }
 
