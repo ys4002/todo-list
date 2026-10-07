@@ -1,4 +1,10 @@
-// Placeholder, replaced in the frontend-screens stage (F4-F6).
+import TasksPanel from '../components/TasksPanel'
+
 export default function TasksPage() {
-  return <h1>My Tasks</h1>
+  return (
+    <>
+      <h1>My Tasks</h1>
+      <TasksPanel scope={{ kind: 'own' }} />
+    </>
+  )
 }

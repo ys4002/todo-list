@@ -1,4 +1,41 @@
-// Placeholder, replaced in the frontend-screens stage (F4-F6).
+import { useEffect, useState } from 'react'
+import { Link, useLocation, useParams } from 'react-router-dom'
+import { adminApi } from '../api/adminApi'
+import type { AdminUser } from '../api/types'
+import TasksPanel from '../components/TasksPanel'
+import NotFoundPage from './NotFoundPage'
+
 export default function AdminUserTasksPage() {
-  return <h1>User tasks</h1>
+  const { userId: userIdParam } = useParams()
+  const userId = Number(userIdParam)
+  const location = useLocation()
+  const hintedUsername = (location.state as { username?: string } | null)?.username
+  const [target, setTarget] = useState<AdminUser | null>(null)
+
+  useEffect(() => {
+    if (!Number.isInteger(userId)) return
+    let cancelled = false
+    adminApi
+      .getUser(userId)
+      .then((u) => !cancelled && setTarget(u))
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [userId])
+
+  if (!Number.isInteger(userId)) return <NotFoundPage />
+
+  const username = target?.username ?? hintedUsername ?? `user ${userId}`
+  return (
+    <>
+      <p>
+        <Link to="/admin/users">← Back to users</Link>
+      </p>
+      <h1>
+        Tasks of {username} {target && !target.enabled && <span className="badge disabled">Disabled</span>}
+      </h1>
+      <TasksPanel scope={{ kind: 'admin', userId }} />
+    </>
+  )
 }

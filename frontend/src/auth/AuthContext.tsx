@@ -22,6 +22,8 @@ interface AuthContextValue {
   logoutReason: LogoutReason | null
   login: (username: string, password: string) => Promise<User>
   logout: (reason?: LogoutReason) => void
+  /** Store a fresh token (e.g. from a password-change response body). */
+  renewSession: (token: string, expiresInSeconds: number) => void
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -43,20 +45,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(null)
     setLogoutReason(reason ?? null)
   }, [])
+  const renewSession = useCallback((token: string, expiresInSeconds: number) => {
+    const expiresAt = Date.now() + expiresInSeconds * 1000
+    tokenStorage.saveToken(token, expiresAt)
+    setSession((current) => (current ? { ...current, token, expiresAt } : current))
+  }, [])
+  const renewRef = useRef(renewSession)
   const logoutRef = useRef(logout)
   useLayoutEffect(() => {
     logoutRef.current = logout
-  }, [logout])
+    renewRef.current = renewSession
+  }, [logout, renewSession])
 
   // Layout effect so the client is configured before any child effect fires a request.
   useLayoutEffect(() => {
     configureApiClient({
       getToken: tokenStorage.getToken,
-      onTokenRenewed: (token, expiresInSeconds) => {
-        const expiresAt = Date.now() + expiresInSeconds * 1000
-        tokenStorage.saveToken(token, expiresAt)
-        setSession((current) => (current ? { ...current, token, expiresAt } : current))
-      },
+      onTokenRenewed: (token, expiresInSeconds) => renewRef.current(token, expiresInSeconds),
       onUnauthorized: (message) => logoutRef.current(reasonForUnauthorized(message)),
     })
   }, [])
@@ -83,8 +88,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const user = session?.user ?? null
   const value = useMemo<AuthContextValue>(
-    () => ({ user, isAdmin: user?.role === 'ADMIN', logoutReason, login, logout }),
-    [user, logoutReason, login, logout],
+    () => ({ user, isAdmin: user?.role === 'ADMIN', logoutReason, login, logout, renewSession }),
+    [user, logoutReason, login, logout, renewSession],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

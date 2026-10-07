@@ -35,3 +35,23 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 table { width: 100%; border-collapse: collapse; }
 th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--border); }
 @media (max-width: 600px) { .container { padding: 8px; } table { display: block; overflow-x: auto; } }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.password-rules { list-style: none; padding: 0; margin: 0 0 12px; font-size: 0.85rem; }
+.rule-met { color: var(--success); }
+.rule-unmet { color: var(--muted); }
+.auth-card { max-width: 420px; margin: 32px auto; }
+.profile-details { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; }
+.profile-details dt { color: var(--muted); }
+.profile-details dd { margin: 0; }
+.dialog-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.4); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 10; }
+.dialog { max-width: 420px; width: 100%; margin: 0; }
+.dialog-actions, .form-actions { display: flex; gap: 8px; justify-content: flex-end; }
+.panel-toolbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 12px; }
+.filter-tabs { display: flex; gap: 4px; }
+.tab.selected { background: var(--primary); color: #fff; border-color: var(--primary); }
+.search-box { display: flex; gap: 4px; flex: 1; min-width: 160px; }
+.search-box input { flex: 1; font: inherit; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; }
+.task-list { list-style: none; padding: 0; margin: 0; }
+.task-body { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.task-meta, .task-description, .empty-state { color: var(--muted); font-size: 0.9rem; }
+.task-actions { display: flex; gap: 4px; }
