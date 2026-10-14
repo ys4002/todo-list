@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, useLocation } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -110,7 +110,7 @@ describe('session (UI24-UI26, UI36)', () => {
     const before = Date.now()
     renderAt('/tasks')
     await userEvent.click(screen.getByText('ping'))
-    expect(localStorage.getItem('todo_app_token')).toBe('renewed')
+    await waitFor(() => expect(localStorage.getItem('todo_app_token')).toBe('renewed'))
     expect(Number(localStorage.getItem('todo_app_expires_at'))).toBeGreaterThanOrEqual(before + 3_600_000)
   })
 
@@ -118,7 +118,7 @@ describe('session (UI24-UI26, UI36)', () => {
     const spy = mockFetch(() => new Response('[]', { status: 200 }))
     renderAt('/tasks')
     await userEvent.click(screen.getByText('ping'))
-    expect(spy.mock.calls[0][1]?.headers).toMatchObject({ Authorization: 'Bearer stored-token' })
+    await waitFor(() => expect(spy.mock.calls[0][1]?.headers).toMatchObject({ Authorization: 'Bearer stored-token' }))
   })
 
   it.each([
@@ -129,7 +129,7 @@ describe('session (UI24-UI26, UI36)', () => {
     mockFetch(() => new Response(JSON.stringify({ message, fieldErrors: [] }), { status: 401 }))
     renderAt('/tasks')
     await userEvent.click(screen.getByText('ping'))
-    expect(where()).toBe(target)
+    await waitFor(() => expect(where()).toBe(target))
     expect(localStorage.getItem('todo_app_token')).toBeNull()
   })
 

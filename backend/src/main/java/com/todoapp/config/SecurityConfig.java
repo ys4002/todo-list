@@ -1,7 +1,11 @@
 package com.todoapp.config;
 
+import java.util.ArrayList;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -24,6 +28,8 @@ import com.todoapp.security.UserJwtAuthenticationConverter;
 
 @Configuration
 public class SecurityConfig {
+
+    private static final Logger log = LoggerFactory.getLogger(SecurityConfig.class);
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
@@ -55,9 +61,12 @@ public class SecurityConfig {
     }
 
     @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
+    public CorsConfigurationSource corsConfigurationSource(
+            @Value("${app.cors.allowed-origins}") String allowedOrigins) {
+        List<String> origins = parseAllowedOrigins(allowedOrigins);
+        log.info("CORS allowed origins: {}", origins);
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:3000"));
+        configuration.setAllowedOriginPatterns(origins);
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
         configuration.setExposedHeaders(List.of("Location", TokenRenewalFilter.TOKEN_HEADER,
@@ -65,5 +74,35 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
+    }
+
+    /**
+     * Splits a comma-separated origin list: trims entries, drops blanks and one trailing slash.
+     * A bare {@code *} or an empty result is rejected so the API is never open to every origin.
+     * Entries may be exact origins or explicit wildcard patterns such as {@code https://app-*-team.vercel.app}.
+     */
+    static List<String> parseAllowedOrigins(String raw) {
+        List<String> origins = new ArrayList<>();
+        if (raw != null) {
+            for (String entry : raw.split(",")) {
+                String origin = entry.trim();
+                if (origin.endsWith("/")) {
+                    origin = origin.substring(0, origin.length() - 1);
+                }
+                if (origin.isEmpty()) {
+                    continue;
+                }
+                if (origin.equals("*")) {
+                    throw new IllegalStateException(
+                            "app.cors.allowed-origins must not be '*'; list exact origins or explicit patterns");
+                }
+                origins.add(origin);
+            }
+        }
+        if (origins.isEmpty()) {
+            throw new IllegalStateException(
+                    "app.cors.allowed-origins (CORS_ALLOWED_ORIGINS) must list at least one origin");
+        }
+        return List.copyOf(origins);
     }
 }

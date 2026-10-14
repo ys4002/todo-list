@@ -13,3 +13,5 @@ frontend/dist/
 # Env
 .env
 .env.local
+.worktrees/
+.gstack/
