@@ -8,7 +8,7 @@ import { validateTask } from '../utils/validation'
 import type { FieldErrors, TaskField } from '../utils/validation'
 import ErrorBanner from './ErrorBanner'
 import FormField from './FormField'
-import Spinner from './Spinner'
+import { BusyLabel } from './Spinner'
 
 interface Props {
   /** Present in edit mode. */
@@ -97,15 +97,9 @@ export default function TaskForm({ task, onSubmit, onCancel }: Props) {
       </div>
       <div className="form-actions">
         <button type="submit" className="primary" disabled={pending} aria-busy={pending ? true : undefined}>
-          {pending ? (
-            <>
-              <Spinner /> {mode === 'edit' ? 'Saving…' : 'Adding…'}
-            </>
-          ) : mode === 'edit' ? (
-            'Save'
-          ) : (
-            'Add task'
-          )}
+          <BusyLabel busy={pending} busyText={mode === 'edit' ? 'Saving…' : 'Adding…'}>
+            {mode === 'edit' ? 'Save' : 'Add task'}
+          </BusyLabel>
         </button>
         <button type="button" className="ghost" disabled={pending} onClick={onCancel}>
           Cancel

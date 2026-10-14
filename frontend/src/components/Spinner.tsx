@@ -18,3 +18,13 @@ export default function Spinner({ label, size = 'sm' }: Props) {
     </>
   )
 }
+
+/** Button content: a spinner and `busyText` while busy, otherwise `children`. */
+export function BusyLabel({ busy, busyText, children }: { busy: boolean; busyText: string; children: string }) {
+  if (!busy) return children
+  return (
+    <>
+      <Spinner /> {busyText}
+    </>
+  )
+}

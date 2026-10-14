@@ -11,7 +11,7 @@ import type { FieldErrors } from '../utils/validation'
 import ErrorBanner from './ErrorBanner'
 import FormField from './FormField'
 import PasswordRulesChecklist from './PasswordRulesChecklist'
-import Spinner from './Spinner'
+import { BusyLabel } from './Spinner'
 
 const empty = { currentPassword: '', newPassword: '', confirmNewPassword: '' }
 const changePasswordFields = Object.keys(empty) as ChangePasswordField[]
@@ -85,13 +85,9 @@ export default function ChangePasswordForm({ username }: { username: string }) {
         error={errors.confirmNewPassword}
       />
       <button type="submit" className="primary" disabled={pending} aria-busy={pending ? true : undefined}>
-        {pending ? (
-          <>
-            <Spinner /> Changing…
-          </>
-        ) : (
-          'Change password'
-        )}
+        <BusyLabel busy={pending} busyText="Changing…">
+          Change password
+        </BusyLabel>
       </button>
     </form>
   )

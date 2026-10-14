@@ -11,6 +11,7 @@ import TaskFilterTabs from './TaskFilterTabs'
 import TaskForm from './TaskForm'
 import TaskList from './TaskList'
 import { taskCheckboxId } from './TaskItem'
+import type { RowBusy } from './TaskItem'
 
 type FormState = null | { kind: 'create' } | { kind: 'edit'; task: Task }
 
@@ -50,7 +51,12 @@ export default function TasksPanel({ scope }: { scope: TaskScope }) {
   }, [focusRequest])
 
   const updatingList = refreshing || searchText.trim() !== q
-  const rowBusy = (taskId: number) => (deletingIds.has(taskId) ? 'deleting' : busyIds.has(taskId) ? 'saving' : null)
+
+  function rowBusy(taskId: number): RowBusy {
+    if (deletingIds.has(taskId)) return 'deleting'
+    if (busyIds.has(taskId)) return 'saving'
+    return null
+  }
 
   function dropStaged(taskId: number) {
     setStaged((current) => without(current, taskId))
@@ -115,7 +121,9 @@ export default function TasksPanel({ scope }: { scope: TaskScope }) {
             if (form.kind === 'edit') {
               await update(form.task.id, request)
               dropStaged(form.task.id)
-            } else await create({ title: request.title, description: request.description, dueAt: request.dueAt })
+            } else {
+              await create({ title: request.title, description: request.description, dueAt: request.dueAt })
+            }
             setForm(null)
           }}
         />

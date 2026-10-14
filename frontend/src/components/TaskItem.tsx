@@ -1,6 +1,6 @@
 import type { Task } from '../api/types'
 import { formatDueAt, isOverdue } from '../utils/dateUtils'
-import Spinner from './Spinner'
+import { BusyLabel } from './Spinner'
 
 export type RowBusy = 'saving' | 'deleting' | null
 
@@ -70,13 +70,9 @@ export default function TaskItem({ task, now, staged, busy, editing, saveFailed,
               aria-label={`Save completion change for '${task.title}'`}
               onClick={() => onSave(task)}
             >
-              {busy === 'saving' ? (
-                <>
-                  <Spinner /> Saving…
-                </>
-              ) : (
-                'Save'
-              )}
+              <BusyLabel busy={busy === 'saving'} busyText="Saving…">
+                Save
+              </BusyLabel>
             </button>
             <button
               type="button"
@@ -100,13 +96,9 @@ export default function TaskItem({ task, now, staged, busy, editing, saveFailed,
           onClick={() => onDelete(task)}
           aria-label={`Delete '${task.title}'`}
         >
-          {busy === 'deleting' ? (
-            <>
-              <Spinner /> Deleting…
-            </>
-          ) : (
-            'Delete'
-          )}
+          <BusyLabel busy={busy === 'deleting'} busyText="Deleting…">
+            Delete
+          </BusyLabel>
         </button>
       </div>
     </li>

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import type { AdminUser } from '../api/types'
-import Spinner from './Spinner'
+import { BusyLabel } from './Spinner'
 
 interface Props {
   users: AdminUser[]
@@ -55,15 +55,9 @@ export default function UserTable({ users, currentUserId, busyIds, onToggleEnabl
                     aria-label={`${user.enabled ? 'Disable' : 'Enable'} ${user.username}`}
                     onClick={() => onToggleEnabled(user)}
                   >
-                    {busy ? (
-                      <>
-                        <Spinner /> {user.enabled ? 'Disabling…' : 'Enabling…'}
-                      </>
-                    ) : user.enabled ? (
-                      'Disable'
-                    ) : (
-                      'Enable'
-                    )}
+                    <BusyLabel busy={busy} busyText={user.enabled ? 'Disabling…' : 'Enabling…'}>
+                      {user.enabled ? 'Disable' : 'Enable'}
+                    </BusyLabel>
                   </button>
                   <button type="button" className="ghost small" disabled={busy} aria-label={`Reset password for ${user.username}`} onClick={() => onResetPassword(user)}>
                     Reset password

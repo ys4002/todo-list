@@ -10,7 +10,7 @@ import type { FieldErrors, ResetPasswordField } from '../utils/validation'
 import ErrorBanner from './ErrorBanner'
 import FormField from './FormField'
 import PasswordRulesChecklist from './PasswordRulesChecklist'
-import Spinner from './Spinner'
+import { BusyLabel } from './Spinner'
 
 const resetPasswordFields: ResetPasswordField[] = ['newPassword', 'confirmNewPassword']
 
@@ -89,13 +89,9 @@ export default function ResetPasswordDialog({ user, onClose, onSuccess }: Props)
             Cancel
           </button>
           <button type="submit" className="primary" disabled={pending} aria-busy={pending ? true : undefined}>
-            {pending ? (
-              <>
-                <Spinner /> Resetting…
-              </>
-            ) : (
-              'Reset password'
-            )}
+            <BusyLabel busy={pending} busyText="Resetting…">
+              Reset password
+            </BusyLabel>
           </button>
         </div>
       </form>
