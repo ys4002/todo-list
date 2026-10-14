@@ -71,6 +71,14 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     [commit, removeNow],
   )
 
+  const clear = useCallback(() => {
+    countdowns.current.forEach((c) => c.handle && clearTimeout(c.handle))
+    exitTimers.current.forEach((handle) => clearTimeout(handle))
+    countdowns.current.clear()
+    exitTimers.current.clear()
+    commit([])
+  }, [commit])
+
   const startCountdown = useCallback(
     (id: number, countdown: Countdown) => {
       countdown.startedAt = Date.now()
@@ -151,8 +159,9 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       error: (message) => push('error', message),
       info: (message) => push('info', message),
       dismiss,
+      clear,
     }),
-    [push, dismiss],
+    [push, dismiss, clear],
   )
 
   return (

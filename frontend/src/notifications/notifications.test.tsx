@@ -161,6 +161,24 @@ describe('NotificationProvider', () => {
     expect(vi.getTimerCount()).toBe(0)
   })
 
+  it('clear() removes every toast at once and cancels all timers', async () => {
+    renderProvider()
+    push(() => notify.success('Saved'))
+    push(() => notify.error('Broke'))
+    const leaving = push(() => notify.info('FYI'))
+    act(() => notify.dismiss(leaving))
+    act(() => notify.clear())
+    expect(screen.getByLabelText('Notifications')).toBeEmptyDOMElement()
+    expect(vi.getTimerCount()).toBe(0)
+    await advance(10_000)
+    expect(screen.getByLabelText('Notifications')).toBeEmptyDOMElement()
+    push(() => notify.success('Later'))
+    await advance(SUCCESS_INFO_DURATION_MS)
+    expect(screen.getByText('Later')).toBeInTheDocument()
+    await advance(EXIT_DURATION_MS)
+    expect(screen.queryByText('Later')).toBeNull()
+  })
+
   it('throws a clear error outside the provider', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {})
     expect(() => render(<Probe />)).toThrow(/NotificationProvider/)

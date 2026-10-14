@@ -19,6 +19,8 @@ export interface Notifications {
   error: (message: string) => number
   info: (message: string) => number
   dismiss: (id: number) => void
+  /** Removes every toast immediately (no exit animation) and cancels all timers. */
+  clear: () => void
 }
 
 export const SUCCESS_INFO_DURATION_MS = 5000

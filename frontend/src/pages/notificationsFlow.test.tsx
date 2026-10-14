@@ -91,4 +91,58 @@ describe('notification flows', () => {
     await advance(10_000)
     expect(screen.getByRole('alert')).toHaveTextContent('Unexpected error')
   })
+
+  it('a password-changed logout leaves only the login notice, not the earlier success toast', async () => {
+    seedSession('USER')
+    mockApi({
+      'PUT /api/auth/password': json({ token: 'fresh-token', tokenType: 'Bearer', expiresIn: 3600, user: alice }),
+      'GET /api/tasks': apiError(401, 'Password has been changed. Please log in again.'),
+    })
+    renderApp('/profile')
+    await userEvent.type(screen.getByLabelText('Current password'), 'Str0ng!Pass')
+    await userEvent.type(screen.getByLabelText('New password'), 'N3w#Secret')
+    await userEvent.type(screen.getByLabelText('Confirm new password'), 'N3w#Secret')
+    await userEvent.click(screen.getByRole('button', { name: 'Change password' }))
+    expect(await screen.findByText('Password changed')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('link', { name: /tasks/i }))
+    await waitFor(() => expect(where()).toBe('/login?passwordChanged=1'))
+    expect(screen.queryByText('Password changed')).toBeNull()
+    expect(screen.getAllByRole('status')).toHaveLength(1)
+    expect(screen.getByRole('status')).toHaveTextContent('Your password was changed. Please log in again.')
+  })
+
+  it('Logout right after a success toast leaves no toast on /login', async () => {
+    seedSession('USER')
+    mockApi({
+      'PUT /api/auth/password': json({ token: 'fresh-token', tokenType: 'Bearer', expiresIn: 3600, user: alice }),
+    })
+    renderApp('/profile')
+    await userEvent.type(screen.getByLabelText('Current password'), 'Str0ng!Pass')
+    await userEvent.type(screen.getByLabelText('New password'), 'N3w#Secret')
+    await userEvent.type(screen.getByLabelText('Confirm new password'), 'N3w#Secret')
+    await userEvent.click(screen.getByRole('button', { name: 'Change password' }))
+    expect(await screen.findByText('Password changed')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Logout' }))
+    await waitFor(() => expect(where()).toBe('/login'))
+    expect(screen.getByLabelText('Notifications')).toBeEmptyDOMElement()
+  })
+
+  it('session expiry after an error toast leaves only the expiry notice', async () => {
+    fakeTimers()
+    seedSession('USER', Date.now() + 20_000)
+    mockApi({
+      'GET /api/tasks': json([task({ id: 8, title: 'Fail me' })]),
+      'PATCH /api/tasks/8/completion': apiError(500, 'Unexpected error'),
+    })
+    renderApp('/tasks')
+    await advance(10)
+    fireEvent.click(screen.getByRole('checkbox', { name: "Mark 'Fail me' as completed" }))
+    await advance(10)
+    expect(screen.getByRole('alert')).toHaveTextContent('Unexpected error')
+    await advance(20_000)
+    expect(where()).toBe('/login?expired=1')
+    expect(screen.queryByRole('alert')).toBeNull()
+    expect(screen.getAllByRole('status')).toHaveLength(1)
+    expect(screen.getByRole('status')).toHaveTextContent('Your session has expired')
+  })
 })
