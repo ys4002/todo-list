@@ -32,9 +32,11 @@ export default function LoginPage() {
   const [pending, setPending] = useState(false)
 
   const notice = notices.find((n) => params.has(n.param))
-  // Shown as a toast on arrival (layout effect: it must be in the DOM in the same commit, as the inline banner was);
-  // dismissed when leaving /login so it does not follow the user to /tasks.
+  // Arriving here ends any session, so earlier toasts are cleared first. The notice is shown as a toast on arrival
+  // (layout effect: it must be in the DOM in the same commit, as the inline banner was); dismissed when leaving
+  // /login so it does not follow the user to /tasks.
   useLayoutEffect(() => {
+    notify.clear()
     if (!notice) return
     const id = notify[notice.type](notice.text)
     return () => notify.dismiss(id)
