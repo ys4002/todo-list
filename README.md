@@ -5,6 +5,7 @@ A multi-user to-do list web app with registration, login, an admin area, and a M
 - **Users** register and log in, then create, edit, delete, search and filter their own tasks, and mark them complete. Every task has a due date and time, and overdue tasks show an Overdue marker (they can still be completed). Users can change their own password from the Profile page.
 - **Admins** can list and search users, disable or enable them, reset any user's password, and view, create, edit, complete or delete any user's tasks.
 - **Sessions** last 60 minutes and renew on every action.
+- **Notifications** appear as toasts that dismiss themselves (or with the close button); the theme follows your OS light or dark setting.
 
 ## Tech stack
 
@@ -66,15 +67,15 @@ cd frontend
 npm test && npm run build && npm run lint
 ```
 
-Latest results: backend 266 passed, frontend 165 passed, no failures. Details are in `reports/`.
+Latest results: backend 266 passed (not changed since), frontend 196 passed, no failures. Details are in `reports/`.
 
 ## Project layout
 
 ```
 backend/    Spring Boot API
 frontend/   React app
-docs/       plan.md (design and API contract), build-summary.md
-reports/    test cases, manual end-to-end log, final test report
+docs/       plan.md (design and API contract), build-summary.md, changes/ (plans for later changes)
+reports/    test cases, manual end-to-end log, final test report, changes/ (QA for later changes)
 ```
 
 ## API overview

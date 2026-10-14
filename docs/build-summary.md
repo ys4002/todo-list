@@ -34,7 +34,7 @@ Run backend tests against a private database: concurrent runs on the shared `tod
 cd backend && SPRING_DATASOURCE_URL='jdbc:mysql://localhost:3306/todo_mytests_db?createDatabaseIfNotExist=true&serverTimezone=UTC' mvn test
 cd frontend && npm test && npm run build && npm run lint
 ```
-Results (re-run by the Team Lead on the merged code): backend 266 passed, 0 failed; frontend 165 passed, 0 failed; build and lint green. Full detail in `reports/test-report.md`, `reports/test-cases.md` and `reports/e2e-manual.md`.
+Results (re-run by the Team Lead on the merged code): backend 266 passed, 0 failed (baseline run 2026-10-14, before the frontend-only change below; the backend was not changed); frontend 196 passed, 0 failed; build, lint and `npm audit --audit-level=high` green. Full detail in `reports/test-report.md`, `reports/test-cases.md` and `reports/e2e-manual.md`; the 2026-10-14 change is covered by `reports/changes/`.
 
 ## Key decisions
 - **Auth tokens:** `spring-boot-starter-oauth2-resource-server` (Spring's own JWT support) instead of a third-party JWT library. Approved by the Team Lead.
@@ -44,7 +44,17 @@ Results (re-run by the Team Lead on the merged code): backend 266 passed, 0 fail
 - **Frontend:** `react-router-dom` (routing); Testing Library packages and `jsdom` (component tests); ESLint tooling (`eslint`, `@eslint/js`, `typescript-eslint`, `eslint-plugin-react-hooks`, `globals`), `@testing-library/dom` and `@types/node`. All approved by the Team Lead.
 - **Public auth calls** (login, register) send no bearer token.
 
+## Change 2026-10-14: refactor, notifications and UI polish
+Frontend only; no backend, API-contract or dependency change. Plan: `docs/changes/2026-10-14-refactor-and-ui-polish.md`; QA: `reports/changes/2026-10-14-refactor-and-ui-polish.md`.
+- **Refactor:** shared error helpers (`utils/formErrors.ts`), `useModalDialog` hook (Escape handling and focus return), `useAdminUsers` hook; duplicated error-mapping and magic-string code removed.
+- **Notifications:** success confirmations and failed task/admin actions now show as toasts (`src/notifications/`) that auto-dismiss (5 s, errors 8 s), pause on hover or focus, have a close button, and are announced with `role=status` or `role=alert`. Form and field errors and list-load failures stay inline. The login notices (`?registered`, `?expired`, `?passwordChanged`, `?disabled`) are toasts that go away when you leave `/login`. A 401 on a failed action shows no error toast because the session handler redirects with its own notice.
+- **UI:** design tokens (`src/styles/tokens.css`), light and dark theme following the OS setting, redesigned header, auth screens, tasks, admin table and dialogs; responsive to 375 px; plain CSS and system fonts, no new libraries.
+- **Defects found by QA and fixed:** DEF-1 (duplicate toast under React StrictMode in `npm run dev`) and DEF-2 (Reset password dialog lost initial focus in dev). Neither affected the production build.
+
 ## Known limitations
+- Dialogs do not trap focus (focus is restored to the opener on close; Escape works).
+- Toast announcements were not tested with a screen reader (VoiceOver): toasts are inserted with their text already inside, so some screen readers may not announce success and info toasts. Safari, Firefox, axe, forced-colors mode, and the full keyboard-only walk were also not tested.
+- Cosmetic, from QA: at 1280 px the toast stack can overlap the "Add task" button for up to 8 s; after a password change, the "Password changed" success toast follows the redirect to login and shows next to the info notice; on the admin table at 768 px the Tasks cell wraps to 3 or 4 lines.
 - The default `admin` / `admin` password is insecure. It is meant for first use only; the backend logs a warning while it is unchanged.
 - OBS-1 (low): a stale or invalid bearer token sent to `/api/auth/login` or `/register` returns 401. The frontend no longer sends one there.
 - Not executed (no browser automation available to QA): E20 (375 px layout) and the visual side of E3, E8, E10 and E11. Their logic is covered by automated UI tests. A person should click through the app once.
