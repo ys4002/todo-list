@@ -2,9 +2,10 @@
 
 A multi-user to-do list web app with registration, login, an admin area, and a MySQL database.
 
-- **Users** register and log in, then create, edit, delete, search and filter their own tasks, and mark them complete. Every task has a due date and time, and overdue tasks show an Overdue marker (they can still be completed). Users can change their own password from the Profile page.
+- **Users** register and log in, then create, edit, delete, search and filter their own tasks, and mark them complete or not complete (tick the checkbox, then press **Save**, or **Clear** to discard the change; nothing is sent until Save). Every task has a due date and time, and overdue tasks show an Overdue marker (they can still be completed). Users can change their own password from the Profile page.
 - **Admins** can list and search users, disable or enable them, reset any user's password, and view, create, edit, complete or delete any user's tasks.
 - **Sessions** last 60 minutes and renew on every action.
+- **Loading:** every request shows a spinner on the button or search box that started it, and that control is disabled until the request finishes.
 - **Notifications** appear as toasts that dismiss themselves (or with the close button); the theme follows your OS light or dark setting.
 
 ## Tech stack

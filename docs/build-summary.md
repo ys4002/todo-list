@@ -61,10 +61,18 @@ Plan: `docs/changes/2026-10-14-toast-fixes-and-prod-db-config.md`.
 - **DEF-3 (low-medium, open):** at about 1024 px wide, if 3 success toasts are showing (bottom-right) and the Reset password dialog is opened within ~5 s, the stack can cover the right part of the dialog's submit button. Toasts pause on hover, close with × or Escape, and expire after 5 s (8 s for errors). Not seen at 768, 1280 or 1440 px.
 - **Known limitations:** in prod `JWT_SECRET` and `ADMIN_PASSWORD` still default to dev values; an unset `CORS_ALLOWED_ORIGINS` allows only localhost; `backend/Dockerfile` (user-added) uses Java 17 images while the project targets Java 21.
 
+## Change 2026-10-14 (3): Save/Clear completion and loaders
+Frontend only; no backend, API-contract or dependency change. Plan: `docs/changes/2026-10-14-save-clear-and-loaders.md`; QA: `reports/changes/2026-10-14-save-clear-and-loaders.md`.
+- **Save/Clear:** the task checkbox stages a change (in memory only) with "Unsaved change", **Save** and **Clear**; Save calls the existing `PATCH .../completion`, Clear sends nothing. Failed saves stay staged with a row error and a toast. Staged changes survive tab and search changes and are lost on navigation or reload.
+- **Loaders:** shared `Spinner`/`BusyLabel` (CSS only, static under reduced motion); spinners and busy labels on login, register, task create/edit/save/delete, change/reset password, admin disable/enable and the search box; the triggering control is disabled and guarded against same-tick double submit.
+- **Bugs fixed:** B1 (no loading sign on tab or search change), B2 (stale list overwriting a mutation), B3 (double toggle), B4 and B5 (repeat delete or disable/enable), B6 (task form Cancel while saving, edit form overwriting completion), B7 (reset dialog closable while pending), B8 (admin table 768 px). QA defects DEF-A (double Save lost a failed change), DEF-B (double submit created two tasks) and DEF-C (admin actions cut off at 768 to 900 px) were fixed and retested.
+- **Not changed (user decision):** DEF-3 toast overlap and the Dockerfile Java version stay as listed above.
+- **Not tested:** screen readers, Safari, Firefox, touch, real throttling and reduced-motion/dark emulation, the full security probe matrix (only the plan's spot-checks ran), and a few failure paths (delete failure with a staged change, Save 404 for a task deleted elsewhere). Minor, accepted: Delete is 32 px tall at 375 px; the live region keeps its last message.
+
 ## Known limitations
 - Dialogs do not trap focus (focus is restored to the opener on close; Escape works).
 - Toast announcements were not tested with a screen reader (VoiceOver): toasts are inserted with their text already inside, so some screen readers may not announce success and info toasts. Safari, Firefox, axe, forced-colors mode, and the full keyboard-only walk were also not tested.
-- Cosmetic, from QA (open): on the admin table at 768 px the Tasks cell wraps to 3 or 4 lines. (The toast overlap with "Add task" and the lingering success toast were fixed in change 2.)
+- Cosmetic (change 3): at 768 px the admin table's scroll area is a few pixels wider than its container and rows are about 118 px tall because the action buttons stack.
 - The default `admin` / `admin` password is insecure. It is meant for first use only; the backend logs a warning while it is unchanged.
 - OBS-1 (low): a stale or invalid bearer token sent to `/api/auth/login` or `/register` returns 401. The frontend no longer sends one there.
 - Not executed (no browser automation available to QA): E20 (375 px layout) and the visual side of E3, E8, E10 and E11. Their logic is covered by automated UI tests. A person should click through the app once.
