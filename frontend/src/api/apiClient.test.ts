@@ -1,4 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiRequestError, apiRequest, configureApiClient } from './apiClient'
 import { tasksApi } from './tasksApi'
 
@@ -100,5 +102,32 @@ describe('tasksApi scope', () => {
     const spy = mockFetch(json([]))
     await tasksApi.list({ kind: 'admin', userId: 2 }, { status: 'active', q: 'milk' })
     expect(spy.mock.calls[0][0]).toBe('/api/admin/users/2/tasks?status=active&q=milk')
+  })
+})
+
+describe('API base URL and vercel.json (F-T7..F-T9)', () => {
+  beforeEach(() => configureApiClient({ getToken: () => 'tok' }))
+  afterEach(() => vi.unstubAllEnvs())
+
+  it('F-T7: keeps the relative URL when VITE_API_BASE_URL is empty', async () => {
+    vi.stubEnv('VITE_API_BASE_URL', '')
+    const spy = mockFetch(json([]))
+    await apiRequest('GET', '/api/tasks')
+    expect(spy.mock.calls[0][0]).toBe('/api/tasks')
+  })
+
+  it('F-T8: prefixes the base URL, trims a trailing slash, keeps auth header and default credentials', async () => {
+    vi.stubEnv('VITE_API_BASE_URL', 'https://api.example.com/')
+    const spy = mockFetch(json([]))
+    await apiRequest('GET', '/api/tasks')
+    const [url, init] = spy.mock.calls[0]
+    expect(url).toBe('https://api.example.com/api/tasks')
+    expect(init?.headers).toMatchObject({ Authorization: 'Bearer tok' })
+    expect(init?.credentials).toBeUndefined()
+  })
+
+  it('F-T9: vercel.json has exactly one SPA rewrite to /index.html', () => {
+    const config = JSON.parse(readFileSync(resolve(__dirname, '../../vercel.json'), 'utf8'))
+    expect(config.rewrites).toEqual([{ source: '/(.*)', destination: '/index.html' }])
   })
 })
