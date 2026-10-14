@@ -12,7 +12,7 @@ interface Props {
 export default function TaskItem({ task, now, onToggle, onEdit, onDelete }: Props) {
   const overdue = isOverdue(task, now)
   return (
-    <li className={task.completed ? 'task-item completed' : 'task-item'}>
+    <li className={`task-item${task.completed ? ' completed' : ''}${overdue ? ' overdue' : ''}`}>
       <input
         type="checkbox"
         checked={task.completed}
@@ -27,10 +27,10 @@ export default function TaskItem({ task, now, onToggle, onEdit, onDelete }: Prop
         </div>
       </div>
       <div className="task-actions">
-        <button type="button" onClick={() => onEdit(task)} aria-label={`Edit '${task.title}'`}>
+        <button type="button" className="ghost small" onClick={() => onEdit(task)} aria-label={`Edit '${task.title}'`}>
           Edit
         </button>
-        <button type="button" className="danger" onClick={() => onDelete(task)} aria-label={`Delete '${task.title}'`}>
+        <button type="button" className="ghost danger small" onClick={() => onDelete(task)} aria-label={`Delete '${task.title}'`}>
           Delete
         </button>
       </div>

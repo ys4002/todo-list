@@ -56,7 +56,7 @@ export default function TaskForm({ task, onSubmit, onCancel }: Props) {
   }
 
   return (
-    <form className="card" onSubmit={handleSubmit} noValidate aria-label={mode === 'edit' ? 'Edit task' : 'New task'}>
+    <form className="card task-form" onSubmit={handleSubmit} noValidate aria-label={mode === 'edit' ? 'Edit task' : 'New task'}>
       <h2>{mode === 'edit' ? 'Edit task' : 'New task'}</h2>
       <ErrorBanner message={formError} />
       <FormField id="task-title" label="Title" value={title} onValueChange={setTitle} error={errors.title} />
@@ -76,27 +76,29 @@ export default function TaskForm({ task, onSubmit, onCancel }: Props) {
           </span>
         )}
       </div>
-      <FormField
-        id="task-due"
-        label="Due date and time"
-        type="datetime-local"
-        min={mode === 'create' ? nowAsDateTimeLocalValue() : undefined}
-        value={dueAtLocal}
-        onValueChange={setDueAtLocal}
-        error={errors.dueAt}
-      />
-      {mode === 'edit' && (
-        <div className="field">
-          <label>
-            <input type="checkbox" checked={completed} onChange={(event) => setCompleted(event.target.checked)} /> Completed
-          </label>
-        </div>
-      )}
+      <div className="form-row">
+        <FormField
+          id="task-due"
+          label="Due date and time"
+          type="datetime-local"
+          min={mode === 'create' ? nowAsDateTimeLocalValue() : undefined}
+          value={dueAtLocal}
+          onValueChange={setDueAtLocal}
+          error={errors.dueAt}
+        />
+        {mode === 'edit' && (
+          <div className="field">
+            <label className="checkbox-label">
+              <input type="checkbox" checked={completed} onChange={(event) => setCompleted(event.target.checked)} /> Completed
+            </label>
+          </div>
+        )}
+      </div>
       <div className="form-actions">
         <button type="submit" className="primary" disabled={pending}>
           {mode === 'edit' ? 'Save' : 'Add task'}
         </button>
-        <button type="button" onClick={onCancel}>
+        <button type="button" className="ghost" onClick={onCancel}>
           Cancel
         </button>
       </div>

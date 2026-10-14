@@ -2,7 +2,9 @@ import { useState } from 'react'
 import type { AdminUser } from '../api/types'
 import { useAuth } from '../auth/AuthContext'
 import ConfirmDialog from '../components/ConfirmDialog'
+import EmptyState from '../components/EmptyState'
 import ErrorBanner from '../components/ErrorBanner'
+import LoadingSkeleton from '../components/LoadingSkeleton'
 import ResetPasswordDialog from '../components/ResetPasswordDialog'
 import SearchBox from '../components/SearchBox'
 import UserTable from '../components/UserTable'
@@ -33,9 +35,9 @@ export default function AdminUsersPage() {
         <SearchBox value={searchText} onChange={setSearchText} label="Search users" />
         <ErrorBanner message={error} />
         {loading ? (
-          <p role="status">Loading users…</p>
+          <LoadingSkeleton label="Loading users…" rows={4} variant="table" />
         ) : users.length === 0 ? (
-          <p className="empty-state">{q ? 'No users match your search' : 'No users'}</p>
+          <EmptyState variant={q ? 'search' : 'users'} message={q ? 'No users match your search' : 'No users'} />
         ) : (
           <UserTable
             users={users}
@@ -49,6 +51,7 @@ export default function AdminUsersPage() {
         <ConfirmDialog
           title={toggling.enabled ? 'Disable user' : 'Enable user'}
           confirmLabel={toggling.enabled ? 'Disable' : 'Enable'}
+          tone={toggling.enabled ? 'danger' : 'primary'}
           onCancel={() => setToggling(null)}
           onConfirm={confirmToggle}
         >

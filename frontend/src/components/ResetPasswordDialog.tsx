@@ -83,7 +83,7 @@ export default function ResetPasswordDialog({ user, onClose, onSuccess }: Props)
           error={errors.confirmNewPassword}
         />
         <div className="dialog-actions">
-          <button type="button" onClick={onClose}>
+          <button type="button" className="ghost" onClick={onClose}>
             Cancel
           </button>
           <button type="submit" className="primary" disabled={pending}>

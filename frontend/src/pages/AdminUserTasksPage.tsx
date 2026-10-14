@@ -29,10 +29,10 @@ export default function AdminUserTasksPage() {
   const username = target?.username ?? hintedUsername ?? `user ${userId}`
   return (
     <>
-      <p>
+      <p className="back-link">
         <Link to="/admin/users">← Back to users</Link>
       </p>
-      <h1>
+      <h1 className="page-heading">
         Tasks of {username} {target && !target.enabled && <span className="badge disabled">Disabled</span>}
       </h1>
       <TasksPanel scope={{ kind: 'admin', userId }} />

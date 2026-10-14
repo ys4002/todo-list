@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ApiRequestError } from '../api/apiClient'
 import { authApi } from '../api/authApi'
+import AuthLayout from '../components/AuthLayout'
 import ErrorBanner from '../components/ErrorBanner'
 import FormField from '../components/FormField'
 import PasswordRulesChecklist from '../components/PasswordRulesChecklist'
@@ -60,7 +61,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <main className="container">
+    <AuthLayout>
       <form className="card auth-card" onSubmit={handleSubmit} noValidate aria-label="Register">
         <h1>Create account</h1>
         <ErrorBanner message={formError} />
@@ -99,13 +100,13 @@ export default function RegisterPage() {
           onValueChange={setField('confirmPassword')}
           error={errors.confirmPassword}
         />
-        <button type="submit" className="primary" disabled={pending}>
+        <button type="submit" className="primary block" disabled={pending}>
           Register
         </button>
         <p>
           Already have an account? <Link to="/login">Log in</Link>
         </p>
       </form>
-    </main>
+    </AuthLayout>
   )
 }

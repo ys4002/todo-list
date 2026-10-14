@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { ApiRequestError } from '../api/apiClient'
 import { DISABLED_MESSAGE, homePathFor, useAuth } from '../auth/AuthContext'
+import AuthLayout from '../components/AuthLayout'
 import ErrorBanner from '../components/ErrorBanner'
 import FormField from '../components/FormField'
 import { useNotifications } from '../notifications/notificationContext'
@@ -61,7 +62,7 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="container">
+    <AuthLayout>
       <form className="card auth-card" onSubmit={handleSubmit} noValidate aria-label="Log in">
         <h1>Log in</h1>
         <ErrorBanner message={formError} />
@@ -82,13 +83,13 @@ export default function LoginPage() {
           onValueChange={(password) => setValues((v) => ({ ...v, password }))}
           error={errors.password}
         />
-        <button type="submit" className="primary" disabled={pending}>
+        <button type="submit" className="primary block" disabled={pending}>
           Log in
         </button>
         <p>
           No account? <Link to="/register">Register</Link>
         </p>
       </form>
-    </main>
+    </AuthLayout>
   )
 }
