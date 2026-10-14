@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { ApiRequestError } from '../api/apiClient'
 import { authApi } from '../api/authApi'
@@ -23,16 +23,20 @@ export default function ChangePasswordForm({ username }: { username: string }) {
   const [errors, setErrors] = useState<FieldErrors<ChangePasswordField>>({})
   const [formError, setFormError] = useState<string | null>(null)
   const [pending, setPending] = useState(false)
+  // Set synchronously so a second submit in the same tick is ignored before the disabled button re-renders.
+  const submitting = useRef(false)
 
   const setField = (field: ChangePasswordField) => (value: string) => setValues((v) => ({ ...v, [field]: value }))
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
+    if (submitting.current) return
     setFormError(null)
     const clientErrors = validateChangePassword(values, username)
     setErrors(clientErrors)
     if (Object.keys(clientErrors).length > 0) return
 
+    submitting.current = true
     setPending(true)
     try {
       const response = await authApi.changePassword(values)
@@ -48,6 +52,7 @@ export default function ChangePasswordForm({ username }: { username: string }) {
         setFormError(errorMessageOf(error))
       }
     } finally {
+      submitting.current = false
       setPending(false)
     }
   }

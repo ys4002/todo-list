@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { ApiRequestError } from '../api/apiClient'
 import { adminApi } from '../api/adminApi'
@@ -25,21 +25,26 @@ export default function ResetPasswordDialog({ user, onClose, onSuccess }: Props)
   const [errors, setErrors] = useState<FieldErrors<ResetPasswordField>>({})
   const [formError, setFormError] = useState<string | null>(null)
   const [pending, setPending] = useState(false)
+  // Set synchronously so a second submit in the same tick is ignored before the disabled button re-renders.
+  const submitting = useRef(false)
 
   useModalDialog(onClose, !pending)
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
+    if (submitting.current) return
     setFormError(null)
     const clientErrors = validateResetPassword(values, user.username)
     setErrors(clientErrors)
     if (Object.keys(clientErrors).length > 0) return
 
+    submitting.current = true
     setPending(true)
     try {
       await adminApi.resetUserPassword(user.id, values)
       onSuccess(user.username)
     } catch (error) {
+      submitting.current = false
       setPending(false)
       if (error instanceof ApiRequestError && error.fieldErrors.length > 0) {
         const serverErrors = fieldErrorsFrom(error, resetPasswordFields)

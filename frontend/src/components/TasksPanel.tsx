@@ -80,7 +80,7 @@ export default function TasksPanel({ scope }: { scope: TaskScope }) {
     if (completed === undefined) return
     setSaveFailedIds((current) => withoutId(current, task.id))
     try {
-      await setCompleted(task, completed)
+      if (!(await setCompleted(task, completed))) return // a save for this task is already running
     } catch {
       // The hook already showed the toast. The change stays staged and the row says so.
       setSaveFailedIds((current) => new Set(current).add(task.id))

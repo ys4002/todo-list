@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ApiRequestError } from '../api/apiClient'
@@ -25,16 +25,20 @@ export default function RegisterPage() {
   const [errors, setErrors] = useState<FieldErrors<RegisterField>>({})
   const [formError, setFormError] = useState<string | null>(null)
   const [pending, setPending] = useState(false)
+  // Set synchronously so a second submit in the same tick is ignored before the disabled button re-renders.
+  const submitting = useRef(false)
 
   const setField = (field: RegisterField) => (value: string) => setValues((v) => ({ ...v, [field]: value }))
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
+    if (submitting.current) return
     setFormError(null)
     const clientErrors = validateRegister(values)
     setErrors(clientErrors)
     if (Object.keys(clientErrors).length > 0) return
 
+    submitting.current = true
     setPending(true)
     try {
       await authApi.register({
@@ -57,6 +61,7 @@ export default function RegisterPage() {
         setFormError(errorMessageOf(error))
       }
     } finally {
+      submitting.current = false
       setPending(false)
     }
   }

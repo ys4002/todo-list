@@ -104,16 +104,17 @@ export function useTasks(scope: TaskScope, status: TaskStatus, q: string) {
     [stableScope, applyServerTask],
   )
 
-  /** Not optimistic: the row stays busy until the server answers. Failures show the toast and are rethrown. */
+  /** Not optimistic: the row stays busy until the server answers. Failures show the toast and are rethrown. Resolves false if a request for this task is already running. */
   const setCompleted = useCallback(
     async (task: Task, completed: boolean) => {
-      if (busyRef.current.has(task.id)) return
+      if (busyRef.current.has(task.id)) return false
       markBusy(task.id, true)
       setError(null)
       try {
         const saved = await tasksApi.setCompleted(stableScope, task.id, completed)
         mutationSeq.current += 1
         applyServerTask(saved)
+        return true
       } catch (e) {
         if (e instanceof ApiRequestError && e.status === 404) setTasks((current) => current.filter((t) => t.id !== task.id))
         notifyMutationError(notify, e)
