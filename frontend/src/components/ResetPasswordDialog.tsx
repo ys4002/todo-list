@@ -10,6 +10,7 @@ import type { FieldErrors, ResetPasswordField } from '../utils/validation'
 import ErrorBanner from './ErrorBanner'
 import FormField from './FormField'
 import PasswordRulesChecklist from './PasswordRulesChecklist'
+import Spinner from './Spinner'
 
 const resetPasswordFields: ResetPasswordField[] = ['newPassword', 'confirmNewPassword']
 
@@ -25,7 +26,7 @@ export default function ResetPasswordDialog({ user, onClose, onSuccess }: Props)
   const [formError, setFormError] = useState<string | null>(null)
   const [pending, setPending] = useState(false)
 
-  useModalDialog(onClose)
+  useModalDialog(onClose, !pending)
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
@@ -57,6 +58,7 @@ export default function ResetPasswordDialog({ user, onClose, onSuccess }: Props)
         aria-modal="true"
         aria-labelledby="reset-title"
         className="card dialog"
+        aria-busy={pending ? true : undefined}
         onSubmit={handleSubmit}
         noValidate
       >
@@ -83,11 +85,17 @@ export default function ResetPasswordDialog({ user, onClose, onSuccess }: Props)
           error={errors.confirmNewPassword}
         />
         <div className="dialog-actions">
-          <button type="button" className="ghost" onClick={onClose}>
+          <button type="button" className="ghost" disabled={pending} onClick={onClose}>
             Cancel
           </button>
-          <button type="submit" className="primary" disabled={pending}>
-            Reset password
+          <button type="submit" className="primary" disabled={pending} aria-busy={pending ? true : undefined}>
+            {pending ? (
+              <>
+                <Spinner /> Resetting…
+              </>
+            ) : (
+              'Reset password'
+            )}
           </button>
         </div>
       </form>

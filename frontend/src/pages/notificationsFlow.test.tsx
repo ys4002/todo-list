@@ -9,7 +9,7 @@ const fakeTimers = () => vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout
 const advance = (ms: number) => act(() => vi.advanceTimersByTimeAsync(ms))
 
 describe('notification flows', () => {
-  it('a failed toggle rolls back, shows one error toast and dismisses it after 8 seconds', async () => {
+  it('a failed save keeps the change staged, shows one error toast and dismisses it after 8 seconds', async () => {
     fakeTimers()
     seedSession('USER')
     mockApi({
@@ -20,14 +20,17 @@ describe('notification flows', () => {
     await advance(10)
     const box = screen.getByRole('checkbox', { name: "Mark 'Fail me' as completed" })
     fireEvent.click(box)
+    fireEvent.click(screen.getByRole('button', { name: "Save completion change for 'Fail me'" }))
     await advance(10)
-    expect(screen.getAllByRole('alert')).toHaveLength(1)
-    expect(screen.getByRole('alert')).toHaveTextContent('Unexpected error')
-    expect(box).not.toBeChecked()
+    // one toast plus the row's own "Not saved" line
+    expect(screen.getAllByText('Unexpected error')).toHaveLength(1)
+    expect(screen.getByText('Not saved. Try again.')).toBeInTheDocument()
+    expect(box).toBeChecked()
     await advance(7900)
-    expect(screen.getByRole('alert')).toBeInTheDocument()
+    expect(screen.getByText('Unexpected error')).toBeInTheDocument()
     await advance(300)
-    expect(screen.queryByRole('alert')).toBeNull()
+    expect(screen.queryByText('Unexpected error')).toBeNull()
+    expect(screen.getByText('Not saved. Try again.')).toBeInTheDocument()
   })
 
   it('a 401 on toggle shows no error toast, only the login expiry notice', async () => {
@@ -38,6 +41,7 @@ describe('notification flows', () => {
     })
     renderApp('/tasks')
     fireEvent.click(await screen.findByRole('checkbox', { name: "Mark 'Expire me' as completed" }))
+    fireEvent.click(screen.getByRole('button', { name: "Save completion change for 'Expire me'" }))
     await waitFor(() => expect(where()).toBe('/login?expired=1'))
     expect(screen.getAllByText(/session has expired/i)).toHaveLength(1)
     expect(screen.queryByRole('alert')).toBeNull()
@@ -137,8 +141,9 @@ describe('notification flows', () => {
     renderApp('/tasks')
     await advance(10)
     fireEvent.click(screen.getByRole('checkbox', { name: "Mark 'Fail me' as completed" }))
+    fireEvent.click(screen.getByRole('button', { name: "Save completion change for 'Fail me'" }))
     await advance(10)
-    expect(screen.getByRole('alert')).toHaveTextContent('Unexpected error')
+    expect(screen.getByText('Unexpected error')).toBeInTheDocument()
     await advance(20_000)
     expect(where()).toBe('/login?expired=1')
     expect(screen.queryByRole('alert')).toBeNull()

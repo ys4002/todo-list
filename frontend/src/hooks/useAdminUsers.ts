@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { adminApi } from '../api/adminApi'
 import type { AdminUser } from '../api/types'
 import { useNotifications } from '../notifications/notificationContext'
@@ -11,6 +11,10 @@ export function useAdminUsers(q: string) {
   const [users, setUsers] = useState<AdminUser[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [busyIds, setBusyIds] = useState<ReadonlySet<number>>(() => new Set())
+  const busyRef = useRef(new Set<number>())
+  // The search text whose response has been handled; a different `q` means a fetch is in flight.
+  const [settledQuery, setSettledQuery] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -22,21 +26,33 @@ export function useAdminUsers(q: string) {
         setError(null)
       })
       .catch((e) => !cancelled && setError(errorMessageOf(e)))
-      .finally(() => !cancelled && setLoading(false))
+      .finally(() => {
+        if (cancelled) return
+        setLoading(false)
+        setSettledQuery(q)
+      })
     return () => {
       cancelled = true
     }
   }, [q])
 
   async function toggleEnabled(target: AdminUser) {
+    if (busyRef.current.has(target.id)) return
+    busyRef.current.add(target.id)
+    setBusyIds(new Set(busyRef.current))
     setError(null)
     try {
       const updated = await adminApi.setUserEnabled(target.id, !target.enabled)
       setUsers((current) => current.map((u) => (u.id === updated.id ? updated : u)))
     } catch (e) {
       notifyMutationError(notify, e)
+    } finally {
+      busyRef.current.delete(target.id)
+      setBusyIds(new Set(busyRef.current))
     }
   }
 
-  return { users, loading, error, setError, toggleEnabled }
+  const refreshing = !loading && settledQuery !== q
+
+  return { users, loading, refreshing, error, setError, busyIds, toggleEnabled }
 }

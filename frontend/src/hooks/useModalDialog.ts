@@ -1,13 +1,18 @@
 import { useEffect, useRef } from 'react'
 
-/** Closes a dialog on Escape and returns focus to the element that had it before the dialog opened. */
-export function useModalDialog(onClose: () => void) {
+/**
+ * Closes a dialog on Escape and returns focus to the element that had it before the dialog opened.
+ * While `closable` is false (a request is in flight) Escape is ignored.
+ */
+export function useModalDialog(onClose: () => void, closable = true) {
   // Captured during the first render, before the dialog moves focus (autoFocus runs at commit).
   const openerRef = useRef<Element | null>(document.activeElement)
   const onCloseRef = useRef(onClose)
+  const closableRef = useRef(closable)
   useEffect(() => {
     onCloseRef.current = onClose
-  }, [onClose])
+    closableRef.current = closable
+  }, [onClose, closable])
 
   // Element focused inside the dialog when the effect last cleaned up (see below).
   const focusBeforeCleanupRef = useRef<Element | null>(null)
@@ -20,7 +25,7 @@ export function useModalDialog(onClose: () => void) {
     if (resume instanceof HTMLElement && resume.isConnected) resume.focus()
 
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onCloseRef.current()
+      if (event.key === 'Escape' && closableRef.current) onCloseRef.current()
     }
     const opener = openerRef.current
     document.addEventListener('keydown', onKeyDown)

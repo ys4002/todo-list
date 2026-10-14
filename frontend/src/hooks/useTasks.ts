@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { ApiRequestError } from '../api/apiClient'
 import { tasksApi } from '../api/tasksApi'
 import { useNotifications } from '../notifications/notificationContext'
 import { notifyMutationError } from '../notifications/notifyMutationError'
@@ -30,6 +31,14 @@ export function useTasks(scope: TaskScope, status: TaskStatus, q: string) {
   const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [busyIds, setBusyIds] = useState<ReadonlySet<number>>(() => new Set())
+  const busyRef = useRef(new Set<number>())
+  // Bumped by every successful mutation. A list response that started before a mutation finished is stale (B2).
+  const mutationSeq = useRef(0)
+  const [reloadKey, setReloadKey] = useState(0)
+  // The request key whose list response has been handled; a different current key means a fetch is in flight.
+  const [settledKey, setSettledKey] = useState('')
+  const requestKey = `${userId ?? 'own'}|${status}|${q}|${reloadKey}`
   const filterRef = useRef({ status, q })
   useEffect(() => {
     filterRef.current = { status, q }
@@ -37,19 +46,36 @@ export function useTasks(scope: TaskScope, status: TaskStatus, q: string) {
 
   useEffect(() => {
     let cancelled = false
+    const seqAtStart = mutationSeq.current
     tasksApi
       .list(stableScope, { status, q })
       .then((list) => {
         if (cancelled) return
+        if (seqAtStart !== mutationSeq.current) {
+          setReloadKey((key) => key + 1)
+          return
+        }
         setTasks(list)
         setError(null)
+        setLoading(false)
+        setSettledKey(requestKey)
       })
-      .catch((e) => !cancelled && setError(errorMessageOf(e)))
-      .finally(() => !cancelled && setLoading(false))
+      .catch((e) => {
+        if (cancelled) return
+        setError(errorMessageOf(e))
+        setLoading(false)
+        setSettledKey(requestKey)
+      })
     return () => {
       cancelled = true
     }
-  }, [stableScope, status, q])
+  }, [stableScope, status, q, requestKey])
+
+  const markBusy = useCallback((id: number, on: boolean) => {
+    if (on) busyRef.current.add(id)
+    else busyRef.current.delete(id)
+    setBusyIds(new Set(busyRef.current))
+  }, [])
 
   /** Insert/replace a server task, or drop it when it no longer matches the current filter. */
   const applyServerTask = useCallback((task: Task) => {
@@ -61,43 +87,66 @@ export function useTasks(scope: TaskScope, status: TaskStatus, q: string) {
   }, [])
 
   const create = useCallback(
-    async (request: TaskCreateRequest) => applyServerTask(await tasksApi.create(stableScope, request)),
+    async (request: TaskCreateRequest) => {
+      const created = await tasksApi.create(stableScope, request)
+      mutationSeq.current += 1
+      applyServerTask(created)
+    },
     [stableScope, applyServerTask],
   )
 
   const update = useCallback(
-    async (id: number, request: TaskUpdateRequest) =>
-      applyServerTask(await tasksApi.update(stableScope, id, request)),
+    async (id: number, request: TaskUpdateRequest) => {
+      const saved = await tasksApi.update(stableScope, id, request)
+      mutationSeq.current += 1
+      applyServerTask(saved)
+    },
     [stableScope, applyServerTask],
   )
 
-  const toggle = useCallback(
-    async (task: Task) => {
-      const completed = !task.completed
+  /** Not optimistic: the row stays busy until the server answers. Failures show the toast and are rethrown. */
+  const setCompleted = useCallback(
+    async (task: Task, completed: boolean) => {
+      if (busyRef.current.has(task.id)) return
+      markBusy(task.id, true)
       setError(null)
-      setTasks((current) => current.map((t) => (t.id === task.id ? { ...t, completed } : t)))
       try {
-        applyServerTask(await tasksApi.setCompleted(stableScope, task.id, completed))
+        const saved = await tasksApi.setCompleted(stableScope, task.id, completed)
+        mutationSeq.current += 1
+        applyServerTask(saved)
       } catch (e) {
-        setTasks((current) => current.map((t) => (t.id === task.id ? task : t)))
+        if (e instanceof ApiRequestError && e.status === 404) setTasks((current) => current.filter((t) => t.id !== task.id))
         notifyMutationError(notify, e)
+        throw e
+      } finally {
+        markBusy(task.id, false)
       }
     },
-    [stableScope, applyServerTask, notify],
+    [stableScope, applyServerTask, notify, markBusy],
   )
 
+  /** Resolves true when the task was deleted. */
   const remove = useCallback(
     async (task: Task) => {
+      if (busyRef.current.has(task.id)) return false
+      markBusy(task.id, true)
       setError(null)
       try {
         await tasksApi.remove(stableScope, task.id)
+        mutationSeq.current += 1
         setTasks((current) => current.filter((t) => t.id !== task.id))
+        return true
       } catch (e) {
         notifyMutationError(notify, e)
+        return false
+      } finally {
+        markBusy(task.id, false)
       }
     },
-    [stableScope, notify],
+    [stableScope, notify, markBusy],
   )
 
-  return { tasks, loading, error, create, update, toggle, remove }
+  const refreshing = !loading && settledKey !== requestKey
+
+  return { tasks, loading, refreshing, error, busyIds, create, update, setCompleted, remove }
 }

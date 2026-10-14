@@ -146,6 +146,7 @@ describe('QA Admin user tasks UI30', () => {
     await waitFor(() => expect(callsTo(spy, 'PUT', '/api/admin/users/2/tasks/80')).toHaveLength(1))
     // complete
     await userEvent.click(await screen.findByRole('checkbox', { name: /Mark 'Edited' as completed/ }))
+    await userEvent.click(screen.getByRole('button', { name: "Save completion change for 'Edited'" }))
     await waitFor(() => expect(callsTo(spy, 'PATCH', '/api/admin/users/2/tasks/80/completion')).toHaveLength(1))
     // delete
     await userEvent.click(await screen.findByRole('button', { name: "Delete 'Edited'" }))
