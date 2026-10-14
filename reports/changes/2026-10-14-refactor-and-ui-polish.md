@@ -7,14 +7,14 @@ Cases: `reports/changes/2026-10-14-refactor-and-ui-polish-cases.md` (130 cases).
 
 ## Verdict
 
-**No blocker. Two dev-mode-only defects (DEF-1 medium, DEF-2 low-medium); production build is correct on both.** All automated, regression, notification, UI and security rows pass except those listed under Defects and "Not tested".
+**No blocker. Both dev-mode-only defects (DEF-1, DEF-2) are fixed and retested PASS on master b2a652b (QA branch 4c8b97d, 196/196 tests).** All automated, regression, notification, UI and security rows pass except those listed under "Not tested".
 
 ## Defects
 
 | ID | Sev | Where | Summary | Status |
 |---|---|---|---|---|
-| DEF-1 | Medium (dev only) | `NotificationProvider`, `LoginPage` | `npm run dev`, `/login?expired=1` or `?registered=1`: two identical toasts at t=1s; at t=7s and t=20s one `toast-leaving` toast remains forever (opacity 0, `pointer-events:auto`, 67px tall, blocks clicks, extra `role=status` node). Prod build: 1 toast, gone at ~5s. Probable cause: StrictMode simulated unmount runs the provider cleanup effect, which clears `exitTimers`, after the page cleanup dismissed the first toast, so its 150ms removal never fires. | Reported to Team Lead (frontend id was not reachable) |
-| DEF-2 | Low-medium (dev only, regression vs pre-change master) | `useModalDialog`, `ResetPasswordDialog` | Dev: opening Reset password leaves focus on the opener button (outside the dialog) instead of "New password". Pre-change master (1586929): `activeElement` = `resetNewPassword`. Prod build: correct. Cause: effect cleanup calls `opener.focus()` during StrictMode's simulated unmount. | Reported; a `feature/frontend-modal-focus-fix` worktree exists, so the fix is in progress |
+| DEF-1 | Medium (dev only) | `NotificationProvider`, `LoginPage` | `npm run dev`, `/login?expired=1` or `?registered=1`: two identical toasts at t=1s; at t=7s and t=20s one `toast-leaving` toast remains forever (opacity 0, `pointer-events:auto`, 67px tall, blocks clicks, extra `role=status` node). Prod build: 1 toast, gone at ~5s. Probable cause: StrictMode simulated unmount runs the provider cleanup effect, which clears `exitTimers`, after the page cleanup dismissed the first toast, so its 150ms removal never fires. | **FIXED, retest PASS** (9fc735f). Dev: `?expired`, `?registered`, `?passwordChanged`, `?disabled` each show exactly 1 toast at 0.3s, 1s, 4s; 0 at 6.5s (disabled error toast lasts 8s, 1 at 6.5s); no `.toast-leaving` left, none clickable. Prod preview: same, 0 at 6.5s |
+| DEF-2 | Low-medium (dev only, regression vs pre-change master) | `useModalDialog`, `ResetPasswordDialog` | Dev: opening Reset password leaves focus on the opener button (outside the dialog) instead of "New password". Pre-change master (1586929): `activeElement` = `resetNewPassword`. Prod build: correct. Cause: effect cleanup calls `opener.focus()` during StrictMode's simulated unmount. | **FIXED, retest PASS** (fc735f7 / fc027ad). Dev: Reset password initial focus = `resetNewPassword`; Escape and Cancel return focus to the opener. Delete task, Disable user and Enable user confirms: initial focus Cancel, Escape and Cancel and confirm return focus to the opener button (for Disable-confirm focus lands on the replaced Enable button). Prod: Reset password initial focus correct. REG-8b now PASS |
 
 Both are cleared for production behaviour; they matter for developers and for any test that runs StrictMode. Retest after the fixes merge: DEF-1 (`/login?expired=1` in dev: exactly one toast, empty at 5.2s), DEF-2 (reset dialog `activeElement` is the New password input in dev and prod; Escape returns focus to the opener).
 
@@ -70,7 +70,7 @@ Both are cleared for production behaviour; they matter for developers and for an
 | REG-6f | PASS | "View tasks" -> `/admin/users/3/tasks` ("Tasks of userb"), "Back to users" works |
 | REG-7a-c | PASS | details `dl` first; wrong current -> inline "Current password is incorrect", no toast; success -> "Password changed" toast, token renewed, fields cleared |
 | REG-8a | PASS | Escape closes confirm and reset dialogs |
-| REG-8b | **FAIL in dev / PASS in prod** | DEF-2: confirm dialog default focus is Cancel (same as master); reset dialog focus input in prod, opener button in dev |
+| REG-8b | PASS (was FAIL in dev, DEF-2, fixed) | DEF-2: confirm dialog default focus is Cancel (same as master); reset dialog focus input in prod, opener button in dev |
 | REG-8c | PASS | focus returns to the opener after Escape (Disable, Reset password) |
 | REG-9 | PASS | same login/list/create/toggle/filter/search/edit/delete sequence replayed on pre-change master (1586929, dev server, scratch worktree) and the new build: request method, path, query and body identical (11 API calls) |
 
@@ -93,7 +93,7 @@ Both are cleared for production behaviour; they matter for developers and for an
 | N6a | **N/T** | VoiceOver not run (headless automation). See risk note below |
 | N6b | PASS (static) | icons and progress `aria-hidden`; viewport is `section[aria-label=Notifications]` with no role or live region |
 | N6c | PASS | `/login?registered=1` prod: one `status`; toggle failure: one `alert` |
-| N7a | PASS prod / FAIL dev | prod one toast; dev see DEF-1 |
+| N7a | PASS | one toast in dev and prod after the DEF-1 fix |
 | N7b | PASS | after login the login toast is gone on `/tasks` (only an earlier "Password changed" toast remained, a separate 5s toast) |
 | N7c | PASS | reload of `/login?expired=1` shows the toast again |
 | N7d | PASS (partial) | leaving `/login` clears it per N7b |
