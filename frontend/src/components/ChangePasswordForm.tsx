@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import { ApiRequestError } from '../api/apiClient'
 import { authApi } from '../api/authApi'
 import { useAuth } from '../auth/AuthContext'
+import { useNotifications } from '../notifications/notificationContext'
 import { errorMessageOf, fieldErrorsFrom } from '../utils/formErrors'
 import type { ChangePasswordField } from '../utils/validation'
 import { validateChangePassword } from '../utils/validation'
@@ -16,17 +17,16 @@ const changePasswordFields = Object.keys(empty) as ChangePasswordField[]
 
 export default function ChangePasswordForm({ username }: { username: string }) {
   const { renewSession } = useAuth()
+  const notify = useNotifications()
   const [values, setValues] = useState(empty)
   const [errors, setErrors] = useState<FieldErrors<ChangePasswordField>>({})
   const [formError, setFormError] = useState<string | null>(null)
-  const [success, setSuccess] = useState(false)
   const [pending, setPending] = useState(false)
 
   const setField = (field: ChangePasswordField) => (value: string) => setValues((v) => ({ ...v, [field]: value }))
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
-    setSuccess(false)
     setFormError(null)
     const clientErrors = validateChangePassword(values, username)
     setErrors(clientErrors)
@@ -37,7 +37,7 @@ export default function ChangePasswordForm({ username }: { username: string }) {
       const response = await authApi.changePassword(values)
       renewSession(response.token, response.expiresIn)
       setValues(empty)
-      setSuccess(true)
+      notify.success('Password changed')
     } catch (error) {
       if (error instanceof ApiRequestError && error.fieldErrors.length > 0) {
         const serverErrors = fieldErrorsFrom(error, changePasswordFields)
@@ -54,11 +54,6 @@ export default function ChangePasswordForm({ username }: { username: string }) {
   return (
     <form onSubmit={handleSubmit} noValidate aria-label="Change password">
       <h2>Change password</h2>
-      {success && (
-        <p role="status" className="success-banner">
-          Password changed
-        </p>
-      )}
       <ErrorBanner message={formError} />
       <FormField
         id="currentPassword"

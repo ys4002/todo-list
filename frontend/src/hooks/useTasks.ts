@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { tasksApi } from '../api/tasksApi'
+import { useNotifications } from '../notifications/notificationContext'
+import { notifyMutationError } from '../notifications/notifyMutationError'
 import { errorMessageOf } from '../utils/formErrors'
 import type { Task, TaskCreateRequest, TaskScope, TaskStatus, TaskUpdateRequest } from '../api/types'
 
@@ -24,6 +26,7 @@ export function useTasks(scope: TaskScope, status: TaskStatus, q: string) {
     () => (userId === undefined ? { kind: 'own' } : { kind: 'admin', userId }),
     [userId],
   )
+  const notify = useNotifications()
   const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -77,10 +80,10 @@ export function useTasks(scope: TaskScope, status: TaskStatus, q: string) {
         applyServerTask(await tasksApi.setCompleted(stableScope, task.id, completed))
       } catch (e) {
         setTasks((current) => current.map((t) => (t.id === task.id ? task : t)))
-        setError(errorMessageOf(e))
+        notifyMutationError(notify, e)
       }
     },
-    [stableScope, applyServerTask],
+    [stableScope, applyServerTask, notify],
   )
 
   const remove = useCallback(
@@ -90,10 +93,10 @@ export function useTasks(scope: TaskScope, status: TaskStatus, q: string) {
         await tasksApi.remove(stableScope, task.id)
         setTasks((current) => current.filter((t) => t.id !== task.id))
       } catch (e) {
-        setError(errorMessageOf(e))
+        notifyMutationError(notify, e)
       }
     },
-    [stableScope],
+    [stableScope, notify],
   )
 
   return { tasks, loading, error, create, update, toggle, remove }
