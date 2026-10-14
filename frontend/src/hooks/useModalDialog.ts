@@ -9,7 +9,16 @@ export function useModalDialog(onClose: () => void) {
     onCloseRef.current = onClose
   }, [onClose])
 
+  // Element focused inside the dialog when the effect last cleaned up (see below).
+  const focusBeforeCleanupRef = useRef<Element | null>(null)
+
   useEffect(() => {
+    // StrictMode's simulated unmount/remount runs cleanup and then setup again straight away: put focus back
+    // where the dialog had it. After a real unmount setup never runs again, so this is a no-op in production.
+    const resume = focusBeforeCleanupRef.current
+    focusBeforeCleanupRef.current = null
+    if (resume instanceof HTMLElement && resume.isConnected) resume.focus()
+
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onCloseRef.current()
     }
@@ -17,6 +26,7 @@ export function useModalDialog(onClose: () => void) {
     document.addEventListener('keydown', onKeyDown)
     return () => {
       document.removeEventListener('keydown', onKeyDown)
+      focusBeforeCleanupRef.current = document.activeElement
       if (opener instanceof HTMLElement && opener.isConnected) opener.focus()
     }
   }, [])
