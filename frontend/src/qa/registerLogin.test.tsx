@@ -161,7 +161,7 @@ describe('QA Login UI7-UI9', () => {
     const spy = mockApi({ 'POST /api/auth/login': () => new Promise<Response>(() => {}) })
     renderApp('/login')
     await doLogin()
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Log in' })).toBeDisabled())
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Logging in…' })).toBeDisabled())
     expect(callsTo(spy, 'POST', '/api/auth/login')).toHaveLength(1)
   })
 

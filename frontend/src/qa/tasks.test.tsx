@@ -85,7 +85,7 @@ describe('QA Tasks UI13-UI19', () => {
     expect(urlsOf(spy, 'GET', '/api/tasks').at(-1)).not.toContain('q=')
   })
 
-  it('UI18 toggle flips immediately and PATCHes {completed:true}', async () => {
+  it('UI18 ticking stages the change; Save PATCHes {completed:true}', async () => {
     seedSession()
     const t = task({ id: 7, title: 'Flip me' })
     let release!: (r: Response) => void
@@ -97,13 +97,15 @@ describe('QA Tasks UI13-UI19', () => {
     const box = await screen.findByRole('checkbox', { name: "Mark 'Flip me' as completed" })
     expect(box).not.toBeChecked()
     await userEvent.click(box)
-    expect(box).toBeChecked() // before the server answered
+    expect(box).toBeChecked()
+    expect(callsTo(spy, 'PATCH', '/api/tasks/7/completion')).toHaveLength(0)
+    await userEvent.click(screen.getByRole('button', { name: "Save completion change for 'Flip me'" }))
     expect(JSON.parse(String(callsTo(spy, 'PATCH', '/api/tasks/7/completion')[0][1]?.body))).toEqual({ completed: true })
     await act(async () => release(json({ ...t, completed: true, completedAt: inMs(0) })))
     expect(box).toBeChecked()
   })
 
-  it('UI18 failure rolls the checkbox back and shows an error', async () => {
+  it('UI18 failure keeps the change staged and shows an error', async () => {
     seedSession()
     mockApi({
       'GET /api/tasks': json([task({ id: 8, title: 'Fail me' })]),
@@ -112,8 +114,9 @@ describe('QA Tasks UI13-UI19', () => {
     renderApp('/tasks')
     const box = await screen.findByRole('checkbox', { name: "Mark 'Fail me' as completed" })
     await userEvent.click(box)
-    expect(await screen.findByRole('alert')).toHaveTextContent('Unexpected error')
-    expect(box).not.toBeChecked()
+    await userEvent.click(screen.getByRole('button', { name: "Save completion change for 'Fail me'" }))
+    expect(await screen.findByText('Unexpected error')).toBeInTheDocument()
+    expect(box).toBeChecked()
   })
 
   it('UI19 completing an overdue task is allowed and removes the Overdue marker', async () => {
@@ -126,6 +129,7 @@ describe('QA Tasks UI13-UI19', () => {
     renderApp('/tasks')
     expect(await screen.findByText('Overdue')).toBeInTheDocument()
     await userEvent.click(screen.getByRole('checkbox', { name: "Mark 'Too late' as completed" }))
+    await userEvent.click(screen.getByRole('button', { name: "Save completion change for 'Too late'" }))
     await waitFor(() => expect(screen.queryByText('Overdue')).toBeNull())
     expect(screen.getByRole('checkbox', { name: "Mark 'Too late' as completed" })).toBeChecked()
   })

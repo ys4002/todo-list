@@ -16,7 +16,7 @@ export default function AdminUsersPage() {
   const { user: me } = useAuth()
   const [searchText, setSearchText] = useState('')
   const q = useDebouncedValue(searchText.trim(), 300)
-  const { users, loading, error, toggleEnabled } = useAdminUsers(q)
+  const { users, loading, refreshing, error, busyIds, toggleEnabled } = useAdminUsers(q)
   const notify = useNotifications()
   const [toggling, setToggling] = useState<AdminUser | null>(null)
   const [resetting, setResetting] = useState<AdminUser | null>(null)
@@ -32,19 +32,22 @@ export default function AdminUsersPage() {
     <>
       <h1>Users</h1>
       <section className="card">
-        <SearchBox value={searchText} onChange={setSearchText} label="Search users" />
+        <SearchBox value={searchText} onChange={setSearchText} label="Search users" busy={refreshing || searchText.trim() !== q} busyLabel="Updating users…" />
         <ErrorBanner message={error} />
         {loading ? (
           <LoadingSkeleton label="Loading users…" rows={4} variant="table" />
         ) : users.length === 0 ? (
           <EmptyState variant={q ? 'search' : 'users'} message={q ? 'No users match your search' : 'No users'} />
         ) : (
-          <UserTable
-            users={users}
-            currentUserId={me?.id ?? -1}
-            onToggleEnabled={setToggling}
-            onResetPassword={setResetting}
-          />
+          <div aria-busy={refreshing} className={refreshing ? 'is-refreshing' : undefined}>
+            <UserTable
+              users={users}
+              currentUserId={me?.id ?? -1}
+              busyIds={busyIds}
+              onToggleEnabled={setToggling}
+              onResetPassword={setResetting}
+            />
+          </div>
         )}
       </section>
       {toggling && (

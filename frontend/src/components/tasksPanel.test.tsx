@@ -80,7 +80,7 @@ describe('task list (UI13-UI19)', () => {
     expect(screen.getByLabelText('Search tasks')).toHaveValue('')
   })
 
-  it('UI18: toggle flips at once, sends PATCH, and rolls back with an error on failure', async () => {
+  it('UI18: ticking only stages the change; Save sends the PATCH; a failure keeps it staged with an error', async () => {
     let release: (r: Response) => void = () => {}
     const task = makeTask({ id: 7, title: 'Pay rent' })
     const spy = mockApi({
@@ -91,10 +91,13 @@ describe('task list (UI13-UI19)', () => {
     const box = await screen.findByLabelText("Mark 'Pay rent' as completed")
     await userEvent.click(box)
     expect(box).toBeChecked()
+    expect(fetchCalls(spy, 'PATCH', '/api/tasks/7/completion')).toHaveLength(0)
+    await userEvent.click(screen.getByRole('button', { name: "Save completion change for 'Pay rent'" }))
     expect(lastBody(spy, 'PATCH', '/api/tasks/7/completion')).toEqual({ completed: true })
     release(errorResponse(500, 'Unexpected error'))
     expect(await screen.findByText('Unexpected error')).toBeInTheDocument()
-    expect(screen.getByLabelText("Mark 'Pay rent' as completed")).not.toBeChecked()
+    expect(screen.getByLabelText("Mark 'Pay rent' as completed")).toBeChecked()
+    expect(screen.getByText('Not saved. Try again.')).toBeInTheDocument()
   })
 
   it('UI19: completing an overdue task is allowed and removes the marker', async () => {
@@ -106,6 +109,7 @@ describe('task list (UI13-UI19)', () => {
     await openTasks(spy)
     expect(await screen.findByText('Overdue')).toBeInTheDocument()
     await userEvent.click(screen.getByLabelText("Mark 'Late' as completed"))
+    await userEvent.click(screen.getByRole('button', { name: "Save completion change for 'Late'" }))
     await waitFor(() => expect(screen.queryByText('Overdue')).not.toBeInTheDocument())
     expect(screen.getByLabelText("Mark 'Late' as completed")).toBeChecked()
   })

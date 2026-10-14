@@ -7,6 +7,7 @@ import AuthLayout from '../components/AuthLayout'
 import ErrorBanner from '../components/ErrorBanner'
 import FormField from '../components/FormField'
 import PasswordRulesChecklist from '../components/PasswordRulesChecklist'
+import { BusyLabel } from '../components/Spinner'
 import { errorMessageOf, fieldErrorsFrom } from '../utils/formErrors'
 import { validateRegister } from '../utils/validation'
 import type { FieldErrors, RegisterField } from '../utils/validation'
@@ -100,8 +101,10 @@ export default function RegisterPage() {
           onValueChange={setField('confirmPassword')}
           error={errors.confirmPassword}
         />
-        <button type="submit" className="primary block" disabled={pending}>
-          Register
+        <button type="submit" className="primary block" disabled={pending} aria-busy={pending ? true : undefined}>
+          <BusyLabel busy={pending} busyText="Registering…">
+            Register
+          </BusyLabel>
         </button>
         <p>
           Already have an account? <Link to="/login">Log in</Link>

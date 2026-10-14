@@ -163,6 +163,8 @@ describe('admin user tasks (UI30)', () => {
     await waitFor(() => expect(String(fetchCalls(spy, 'GET', '/api/admin/users/2/tasks').at(-1)![0])).toBe('/api/admin/users/2/tasks?q=water'))
 
     await userEvent.click(screen.getByLabelText("Mark 'Water plants' as completed"))
+    expect(fetchCalls(spy, 'PATCH', '/api/admin/users/2/tasks/5/completion')).toHaveLength(0)
+    await userEvent.click(screen.getByRole('button', { name: "Save completion change for 'Water plants'" }))
     await waitFor(() => expect(fetchCalls(spy, 'PATCH', '/api/admin/users/2/tasks/5/completion')).toHaveLength(1))
 
     await userEvent.click(screen.getByRole('button', { name: "Edit 'Water plants'" }))

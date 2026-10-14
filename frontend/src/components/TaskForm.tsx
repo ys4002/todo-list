@@ -8,6 +8,7 @@ import { validateTask } from '../utils/validation'
 import type { FieldErrors, TaskField } from '../utils/validation'
 import ErrorBanner from './ErrorBanner'
 import FormField from './FormField'
+import { BusyLabel } from './Spinner'
 
 interface Props {
   /** Present in edit mode. */
@@ -56,7 +57,7 @@ export default function TaskForm({ task, onSubmit, onCancel }: Props) {
   }
 
   return (
-    <form className="card task-form" onSubmit={handleSubmit} noValidate aria-label={mode === 'edit' ? 'Edit task' : 'New task'}>
+    <form className="card task-form" onSubmit={handleSubmit} noValidate aria-busy={pending ? true : undefined} aria-label={mode === 'edit' ? 'Edit task' : 'New task'}>
       <h2>{mode === 'edit' ? 'Edit task' : 'New task'}</h2>
       <ErrorBanner message={formError} />
       <FormField id="task-title" label="Title" value={title} onValueChange={setTitle} error={errors.title} />
@@ -95,10 +96,12 @@ export default function TaskForm({ task, onSubmit, onCancel }: Props) {
         )}
       </div>
       <div className="form-actions">
-        <button type="submit" className="primary" disabled={pending}>
-          {mode === 'edit' ? 'Save' : 'Add task'}
+        <button type="submit" className="primary" disabled={pending} aria-busy={pending ? true : undefined}>
+          <BusyLabel busy={pending} busyText={mode === 'edit' ? 'Saving…' : 'Adding…'}>
+            {mode === 'edit' ? 'Save' : 'Add task'}
+          </BusyLabel>
         </button>
-        <button type="button" className="ghost" onClick={onCancel}>
+        <button type="button" className="ghost" disabled={pending} onClick={onCancel}>
           Cancel
         </button>
       </div>

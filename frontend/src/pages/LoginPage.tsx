@@ -6,6 +6,7 @@ import { DISABLED_MESSAGE, homePathFor, useAuth } from '../auth/AuthContext'
 import AuthLayout from '../components/AuthLayout'
 import ErrorBanner from '../components/ErrorBanner'
 import FormField from '../components/FormField'
+import { BusyLabel } from '../components/Spinner'
 import { useNotifications } from '../notifications/notificationContext'
 import type { NotificationType } from '../notifications/notificationContext'
 import { errorMessageOf } from '../utils/formErrors'
@@ -85,8 +86,10 @@ export default function LoginPage() {
           onValueChange={(password) => setValues((v) => ({ ...v, password }))}
           error={errors.password}
         />
-        <button type="submit" className="primary block" disabled={pending}>
-          Log in
+        <button type="submit" className="primary block" disabled={pending} aria-busy={pending ? true : undefined}>
+          <BusyLabel busy={pending} busyText="Logging in…">
+            Log in
+          </BusyLabel>
         </button>
         <p>
           No account? <Link to="/register">Register</Link>

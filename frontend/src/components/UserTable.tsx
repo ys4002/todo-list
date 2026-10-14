@@ -1,14 +1,17 @@
 import { Link } from 'react-router-dom'
 import type { AdminUser } from '../api/types'
+import { BusyLabel } from './Spinner'
 
 interface Props {
   users: AdminUser[]
   currentUserId: number
+  /** Users with an enable/disable request in flight. */
+  busyIds: ReadonlySet<number>
   onToggleEnabled: (user: AdminUser) => void
   onResetPassword: (user: AdminUser) => void
 }
 
-export default function UserTable({ users, currentUserId, onToggleEnabled, onResetPassword }: Props) {
+export default function UserTable({ users, currentUserId, busyIds, onToggleEnabled, onResetPassword }: Props) {
   return (
     <div className="table-scroll">
       <table>
@@ -25,6 +28,7 @@ export default function UserTable({ users, currentUserId, onToggleEnabled, onRes
         <tbody>
           {users.map((user) => {
             const isSelf = user.id === currentUserId
+            const busy = busyIds.has(user.id)
             return (
               <tr key={user.id}>
                 <td className="cell-username">{user.username}</td>
@@ -35,7 +39,7 @@ export default function UserTable({ users, currentUserId, onToggleEnabled, onRes
                     {user.enabled ? 'Enabled' : 'Disabled'}
                   </span>
                 </td>
-                <td>
+                <td className="cell-tasks">
                   {user.taskCount} total, {user.openTaskCount} open
                 </td>
                 <td className="row-actions">
@@ -45,14 +49,17 @@ export default function UserTable({ users, currentUserId, onToggleEnabled, onRes
                   <button
                     type="button"
                     className="ghost small"
-                    disabled={isSelf}
+                    disabled={isSelf || busy}
+                    aria-busy={busy ? true : undefined}
                     title={isSelf ? 'You cannot disable your own account' : undefined}
                     aria-label={`${user.enabled ? 'Disable' : 'Enable'} ${user.username}`}
                     onClick={() => onToggleEnabled(user)}
                   >
-                    {user.enabled ? 'Disable' : 'Enable'}
+                    <BusyLabel busy={busy} busyText={user.enabled ? 'Disabling…' : 'Enabling…'}>
+                      {user.enabled ? 'Disable' : 'Enable'}
+                    </BusyLabel>
                   </button>
-                  <button type="button" className="ghost small" aria-label={`Reset password for ${user.username}`} onClick={() => onResetPassword(user)}>
+                  <button type="button" className="ghost small" disabled={busy} aria-label={`Reset password for ${user.username}`} onClick={() => onResetPassword(user)}>
                     Reset password
                   </button>
                 </td>

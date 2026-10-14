@@ -7,7 +7,7 @@ describe('loading skeleton', () => {
     seedSession('USER')
     mockApi({ 'GET /api/tasks': () => new Promise<Response>(() => {}) })
     renderApp('/tasks')
-    expect(screen.getByRole('status')).toHaveTextContent('Loading tasks…')
+    expect(screen.getByText('Loading tasks…')).toHaveAttribute('role', 'status')
     expect(document.querySelector('.skeleton')).toHaveAttribute('aria-hidden', 'true')
     expect(screen.queryAllByRole('listitem')).toHaveLength(0)
   })
