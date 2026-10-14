@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { ApiRequestError } from '../api/apiClient'
 import type { Task, TaskUpdateRequest } from '../api/types'
@@ -28,14 +28,18 @@ export default function TaskForm({ task, onSubmit, onCancel }: Props) {
   const [errors, setErrors] = useState<FieldErrors<TaskField>>({})
   const [formError, setFormError] = useState<string | null>(null)
   const [pending, setPending] = useState(false)
+  // Set synchronously so a second submit in the same tick is ignored before the disabled button re-renders.
+  const submitting = useRef(false)
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
+    if (submitting.current) return
     setFormError(null)
     const clientErrors = validateTask({ title, description, dueAtLocal }, mode)
     setErrors(clientErrors)
     if (Object.keys(clientErrors).length > 0) return
 
+    submitting.current = true
     setPending(true)
     try {
       await onSubmit({
@@ -45,6 +49,7 @@ export default function TaskForm({ task, onSubmit, onCancel }: Props) {
         completed,
       })
     } catch (error) {
+      submitting.current = false
       setPending(false)
       if (error instanceof ApiRequestError && error.fieldErrors.length > 0) {
         const serverErrors = fieldErrorsFrom(error, taskFields)
