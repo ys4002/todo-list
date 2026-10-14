@@ -254,7 +254,8 @@ tbody tr:hover { background: var(--color-primary-soft); }
 .cell-username { font-weight: var(--weight-semibold); }
 .cell-tasks { white-space: nowrap; }
 .card > .search-box { margin-bottom: var(--space-4); }
-.row-actions { display: flex; align-items: center; gap: var(--space-1); white-space: nowrap; }
+.row-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1); }
+.row-actions > * { white-space: nowrap; }
 
 /* ===== Profile and pages ===== */
 .profile-details { display: grid; grid-template-columns: max-content 1fr; gap: var(--space-2) var(--space-6); }

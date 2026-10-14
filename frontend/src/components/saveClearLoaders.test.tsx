@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import type { AdminUser } from '../api/types'
@@ -539,5 +539,55 @@ describe('security: user text stays text', () => {
     expect(screen.getByText('Unsaved change')).toBeInTheDocument()
     expect(localStorage.getItem('todo_app_staged')).toBeNull()
     expect(fetchCalls(spy, 'PATCH', patchPath(50))).toHaveLength(0)
+  })
+})
+
+describe('same-tick double clicks (DEF-A, DEF-B)', () => {
+  it('DEF-A: a double Save click in one tick sends one PATCH and a failure keeps the change staged', async () => {
+    const spy = mockApi({
+      'GET /api/tasks': jsonResponse([makeTask({ id: 60, title: 'Twice' })]),
+      'PATCH /api/tasks/60/completion': errorResponse(500, 'Unexpected error'),
+    })
+    await openTasks(spy)
+    await userEvent.click(await screen.findByRole('checkbox', { name: "Mark 'Twice' as completed" }))
+    const save = saveButton('Twice')
+    act(() => {
+      save.click()
+      save.click()
+    })
+    expect(await screen.findByText('Not saved. Try again.')).toBeInTheDocument()
+    expect(fetchCalls(spy, 'PATCH', patchPath(60))).toHaveLength(1)
+    expect(checkbox('Twice')).toBeChecked()
+    expect(saveButton('Twice')).toBeEnabled()
+    expect(clearButton('Twice')).toBeEnabled()
+  })
+
+  it('DEF-B: a double submit of the task form in one tick creates one task', async () => {
+    const created = makeTask({ id: 61, title: 'Once' })
+    const spy = mockApi({ 'GET /api/tasks': jsonResponse([]), 'POST /api/tasks': jsonResponse(created, 201) })
+    await openTasks(spy)
+    await userEvent.click(await screen.findByRole('button', { name: 'Add task' }))
+    await userEvent.type(screen.getByLabelText('Title'), 'Once')
+    fireEvent.change(screen.getByLabelText('Due date and time'), { target: { value: toDateTimeLocalValue(hoursFromNow(24)) } })
+    const form = screen.getByRole('form', { name: 'New task' })
+    act(() => {
+      fireEvent.submit(form)
+      fireEvent.submit(form)
+    })
+    await screen.findByText('Once')
+    expect(fetchCalls(spy, 'POST', '/api/tasks')).toHaveLength(1)
+  })
+
+  it('a double login submit in one tick sends one request', async () => {
+    const spy = mockApi({ 'POST /api/auth/login': () => new Promise<Response>(() => {}) })
+    renderApp('/login')
+    await userEvent.type(screen.getByLabelText('Username'), 'alice_01')
+    await userEvent.type(screen.getByLabelText('Password'), 'Str0ng!Pass')
+    const form = screen.getByRole('form', { name: 'Log in' })
+    act(() => {
+      fireEvent.submit(form)
+      fireEvent.submit(form)
+    })
+    expect(fetchCalls(spy, 'POST', '/api/auth/login')).toHaveLength(1)
   })
 })

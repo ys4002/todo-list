@@ -1,4 +1,4 @@
-import { useLayoutEffect, useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { ApiRequestError } from '../api/apiClient'
@@ -31,6 +31,8 @@ export default function LoginPage() {
   const [errors, setErrors] = useState<FieldErrors<LoginField>>({})
   const [formError, setFormError] = useState<string | null>(null)
   const [pending, setPending] = useState(false)
+  // Set synchronously so a second submit in the same tick is ignored before the disabled button re-renders.
+  const submitting = useRef(false)
 
   const notice = notices.find((n) => params.has(n.param))
   // Arriving here ends any session, so earlier toasts are cleared first. The notice is shown as a toast on arrival
@@ -45,16 +47,19 @@ export default function LoginPage() {
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
+    if (submitting.current) return
     setFormError(null)
     const clientErrors = validateLogin(values)
     setErrors(clientErrors)
     if (Object.keys(clientErrors).length > 0) return
 
+    submitting.current = true
     setPending(true)
     try {
       const user = await login(values.username.trim(), values.password)
       navigate(homePathFor(user.role), { replace: true })
     } catch (error) {
+      submitting.current = false
       setPending(false)
       if (error instanceof ApiRequestError && (error.status === 403 || error.message === DISABLED_MESSAGE)) {
         setFormError(DISABLED_TEXT)
