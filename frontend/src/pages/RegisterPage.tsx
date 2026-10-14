@@ -6,6 +6,7 @@ import { authApi } from '../api/authApi'
 import ErrorBanner from '../components/ErrorBanner'
 import FormField from '../components/FormField'
 import PasswordRulesChecklist from '../components/PasswordRulesChecklist'
+import { errorMessageOf, fieldErrorsFrom } from '../utils/formErrors'
 import { validateRegister } from '../utils/validation'
 import type { FieldErrors, RegisterField } from '../utils/validation'
 
@@ -46,16 +47,12 @@ export default function RegisterPage() {
       if (error instanceof ApiRequestError && error.status === 409) {
         setErrors({ username: error.message })
       } else if (error instanceof ApiRequestError && error.fieldErrors.length > 0) {
-        const serverErrors: FieldErrors<RegisterField> = {}
-        for (const item of error.fieldErrors) {
-          const field = item.field as RegisterField
-          if (fields.includes(field) && !serverErrors[field]) serverErrors[field] = item.message
-        }
+        const serverErrors = fieldErrorsFrom(error, fields)
         setErrors(serverErrors)
         if (Object.keys(serverErrors).length === 0) setFormError(error.message)
       } else {
         setErrors({})
-        setFormError(error instanceof Error ? error.message : 'Something went wrong')
+        setFormError(errorMessageOf(error))
       }
     } finally {
       setPending(false)

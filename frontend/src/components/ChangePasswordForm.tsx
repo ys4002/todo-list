@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import { ApiRequestError } from '../api/apiClient'
 import { authApi } from '../api/authApi'
 import { useAuth } from '../auth/AuthContext'
+import { errorMessageOf, fieldErrorsFrom } from '../utils/formErrors'
 import type { ChangePasswordField } from '../utils/validation'
 import { validateChangePassword } from '../utils/validation'
 import type { FieldErrors } from '../utils/validation'
@@ -11,6 +12,7 @@ import FormField from './FormField'
 import PasswordRulesChecklist from './PasswordRulesChecklist'
 
 const empty = { currentPassword: '', newPassword: '', confirmNewPassword: '' }
+const changePasswordFields = Object.keys(empty) as ChangePasswordField[]
 
 export default function ChangePasswordForm({ username }: { username: string }) {
   const { renewSession } = useAuth()
@@ -38,15 +40,11 @@ export default function ChangePasswordForm({ username }: { username: string }) {
       setSuccess(true)
     } catch (error) {
       if (error instanceof ApiRequestError && error.fieldErrors.length > 0) {
-        const serverErrors: FieldErrors<ChangePasswordField> = {}
-        for (const item of error.fieldErrors) {
-          const field = item.field as ChangePasswordField
-          if (field in empty && !serverErrors[field]) serverErrors[field] = item.message
-        }
+        const serverErrors = fieldErrorsFrom(error, changePasswordFields)
         setErrors(serverErrors)
         if (Object.keys(serverErrors).length === 0) setFormError(error.message)
       } else {
-        setFormError(error instanceof Error ? error.message : 'Something went wrong')
+        setFormError(errorMessageOf(error))
       }
     } finally {
       setPending(false)

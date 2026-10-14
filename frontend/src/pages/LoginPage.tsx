@@ -2,9 +2,10 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { ApiRequestError } from '../api/apiClient'
-import { homePathFor, useAuth } from '../auth/AuthContext'
+import { DISABLED_MESSAGE, homePathFor, useAuth } from '../auth/AuthContext'
 import ErrorBanner from '../components/ErrorBanner'
 import FormField from '../components/FormField'
+import { errorMessageOf } from '../utils/formErrors'
 import { validateLogin } from '../utils/validation'
 import type { FieldErrors, LoginField } from '../utils/validation'
 
@@ -39,10 +40,10 @@ export default function LoginPage() {
       navigate(homePathFor(user.role), { replace: true })
     } catch (error) {
       setPending(false)
-      if (error instanceof ApiRequestError && (error.status === 403 || error.message === 'Account is disabled')) {
+      if (error instanceof ApiRequestError && (error.status === 403 || error.message === DISABLED_MESSAGE)) {
         setFormError(DISABLED_TEXT)
       } else {
-        setFormError(error instanceof Error ? error.message : 'Something went wrong')
+        setFormError(errorMessageOf(error))
       }
     }
   }

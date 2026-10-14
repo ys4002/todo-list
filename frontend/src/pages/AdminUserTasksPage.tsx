@@ -18,7 +18,7 @@ export default function AdminUserTasksPage() {
     adminApi
       .getUser(userId)
       .then((u) => !cancelled && setTarget(u))
-      .catch(() => {})
+      .catch(() => {}) // intentional: the header falls back to the hint; TasksPanel surfaces load errors
     return () => {
       cancelled = true
     }

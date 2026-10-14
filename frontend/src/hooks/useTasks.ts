@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { tasksApi } from '../api/tasksApi'
+import { errorMessageOf } from '../utils/formErrors'
 import type { Task, TaskCreateRequest, TaskScope, TaskStatus, TaskUpdateRequest } from '../api/types'
 
 function sortTasks(tasks: Task[]): Task[] {
@@ -15,8 +16,6 @@ function matchesFilter(task: Task, status: TaskStatus, q: string): boolean {
   if (!needle) return true
   return `${task.title}\n${task.description ?? ''}`.toLowerCase().includes(needle)
 }
-
-const messageOf = (error: unknown) => (error instanceof Error ? error.message : 'Something went wrong')
 
 /** Tasks for a scope, filtered by status and search text. Mutations update the list locally. */
 export function useTasks(scope: TaskScope, status: TaskStatus, q: string) {
@@ -42,7 +41,7 @@ export function useTasks(scope: TaskScope, status: TaskStatus, q: string) {
         setTasks(list)
         setError(null)
       })
-      .catch((e) => !cancelled && setError(messageOf(e)))
+      .catch((e) => !cancelled && setError(errorMessageOf(e)))
       .finally(() => !cancelled && setLoading(false))
     return () => {
       cancelled = true
@@ -78,7 +77,7 @@ export function useTasks(scope: TaskScope, status: TaskStatus, q: string) {
         applyServerTask(await tasksApi.setCompleted(stableScope, task.id, completed))
       } catch (e) {
         setTasks((current) => current.map((t) => (t.id === task.id ? task : t)))
-        setError(messageOf(e))
+        setError(errorMessageOf(e))
       }
     },
     [stableScope, applyServerTask],
@@ -91,7 +90,7 @@ export function useTasks(scope: TaskScope, status: TaskStatus, q: string) {
         await tasksApi.remove(stableScope, task.id)
         setTasks((current) => current.filter((t) => t.id !== task.id))
       } catch (e) {
-        setError(messageOf(e))
+        setError(errorMessageOf(e))
       }
     },
     [stableScope],

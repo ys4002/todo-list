@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import type { ReactNode } from 'react'
+import { useModalDialog } from '../hooks/useModalDialog'
 
 interface Props {
   title: string
@@ -11,14 +12,10 @@ interface Props {
 
 export default function ConfirmDialog({ title, children, confirmLabel, onConfirm, onCancel }: Props) {
   const cancelRef = useRef<HTMLButtonElement>(null)
+  useModalDialog(onCancel)
   useEffect(() => {
     cancelRef.current?.focus()
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onCancel()
-    }
-    document.addEventListener('keydown', onKeyDown)
-    return () => document.removeEventListener('keydown', onKeyDown)
-  }, [onCancel])
+  }, [])
 
   return (
     <div className="dialog-backdrop">

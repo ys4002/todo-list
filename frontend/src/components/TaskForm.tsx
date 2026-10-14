@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import { ApiRequestError } from '../api/apiClient'
 import type { Task, TaskUpdateRequest } from '../api/types'
 import { nowAsDateTimeLocalValue, toDateTimeLocalValue, toIsoUtc } from '../utils/dateUtils'
+import { errorMessageOf, fieldErrorsFrom } from '../utils/formErrors'
 import { validateTask } from '../utils/validation'
 import type { FieldErrors, TaskField } from '../utils/validation'
 import ErrorBanner from './ErrorBanner'
@@ -45,15 +46,11 @@ export default function TaskForm({ task, onSubmit, onCancel }: Props) {
     } catch (error) {
       setPending(false)
       if (error instanceof ApiRequestError && error.fieldErrors.length > 0) {
-        const serverErrors: FieldErrors<TaskField> = {}
-        for (const item of error.fieldErrors) {
-          const field = item.field as TaskField
-          if (taskFields.includes(field) && !serverErrors[field]) serverErrors[field] = item.message
-        }
+        const serverErrors = fieldErrorsFrom(error, taskFields)
         setErrors(serverErrors)
         if (Object.keys(serverErrors).length === 0) setFormError(error.message)
       } else {
-        setFormError(error instanceof Error ? error.message : 'Something went wrong')
+        setFormError(errorMessageOf(error))
       }
     }
   }

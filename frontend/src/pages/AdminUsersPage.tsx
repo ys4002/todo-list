@@ -1,5 +1,4 @@
-import { useEffect, useState } from 'react'
-import { adminApi } from '../api/adminApi'
+import { useState } from 'react'
 import type { AdminUser } from '../api/types'
 import { useAuth } from '../auth/AuthContext'
 import ConfirmDialog from '../components/ConfirmDialog'
@@ -7,49 +6,24 @@ import ErrorBanner from '../components/ErrorBanner'
 import ResetPasswordDialog from '../components/ResetPasswordDialog'
 import SearchBox from '../components/SearchBox'
 import UserTable from '../components/UserTable'
+import { useAdminUsers } from '../hooks/useAdminUsers'
 import { useDebouncedValue } from '../hooks/useDebouncedValue'
-
-const messageOf = (error: unknown) => (error instanceof Error ? error.message : 'Something went wrong')
 
 export default function AdminUsersPage() {
   const { user: me } = useAuth()
   const [searchText, setSearchText] = useState('')
   const q = useDebouncedValue(searchText.trim(), 300)
-  const [users, setUsers] = useState<AdminUser[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const { users, loading, error, toggleEnabled } = useAdminUsers(q)
   const [notice, setNotice] = useState<string | null>(null)
   const [toggling, setToggling] = useState<AdminUser | null>(null)
   const [resetting, setResetting] = useState<AdminUser | null>(null)
-
-  useEffect(() => {
-    let cancelled = false
-    adminApi
-      .listUsers(q)
-      .then((list) => {
-        if (cancelled) return
-        setUsers(list)
-        setError(null)
-      })
-      .catch((e) => !cancelled && setError(messageOf(e)))
-      .finally(() => !cancelled && setLoading(false))
-    return () => {
-      cancelled = true
-    }
-  }, [q])
 
   async function confirmToggle() {
     const target = toggling
     setToggling(null)
     if (!target) return
-    setError(null)
     setNotice(null)
-    try {
-      const updated = await adminApi.setUserEnabled(target.id, !target.enabled)
-      setUsers((current) => current.map((u) => (u.id === updated.id ? updated : u)))
-    } catch (e) {
-      setError(messageOf(e))
-    }
+    await toggleEnabled(target)
   }
 
   return (
