@@ -51,6 +51,12 @@ export function buildQuery(params: Record<string, string | undefined>): string {
   return text ? `?${text}` : ''
 }
 
+/** Build-time backend origin (public config, never a secret). Empty keeps relative `/api` URLs. */
+function apiBaseUrl(): string {
+  const base = import.meta.env.VITE_API_BASE_URL as string | undefined
+  return (base ?? '').trim().replace(/\/+$/, '')
+}
+
 export async function apiRequest<T>(
   method: string,
   path: string,
@@ -64,7 +70,7 @@ export async function apiRequest<T>(
 
   let response: Response
   try {
-    response = await fetch(path, {
+    response = await fetch(apiBaseUrl() + path, {
       method,
       headers,
       body: body === undefined ? undefined : JSON.stringify(body),
