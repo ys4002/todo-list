@@ -130,13 +130,20 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const countdownMap = countdowns.current
     const exitTimerMap = exitTimers.current
+    // StrictMode's simulated unmount runs the cleanup below and re-runs this setup; a toast already leaving by then
+    // lost its exit timer, so re-arm it or the faded toast would stay in the DOM forever.
+    for (const toast of toastsRef.current) {
+      if (toast.leaving && !exitTimerMap.has(toast.id)) {
+        exitTimerMap.set(toast.id, setTimeout(() => removeNow(toast.id), EXIT_DURATION_MS))
+      }
+    }
     return () => {
       countdownMap.forEach((c) => c.handle && clearTimeout(c.handle))
       exitTimerMap.forEach((handle) => clearTimeout(handle))
       countdownMap.clear()
       exitTimerMap.clear()
     }
-  }, [])
+  }, [removeNow])
 
   const api = useMemo<Notifications>(
     () => ({
