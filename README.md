@@ -49,11 +49,38 @@ Username `admin`, password `admin`. This default is insecure: change it right aw
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `DB_URL` | `jdbc:mysql://localhost:3306/todo_db?createDatabaseIfNotExist=true&serverTimezone=UTC` | Database URL |
-| `DB_USERNAME` / `DB_PASSWORD` | `root` / `root` | Database login |
+| `DB_URL` | `jdbc:mysql://localhost:3306/todo_db?createDatabaseIfNotExist=true&serverTimezone=UTC` | Database URL. **Required with the `prod` profile** (no default) |
+| `DB_USERNAME` / `DB_PASSWORD` | `root` / `root` | Database login. **Required with the `prod` profile** (no default) |
+| `SPRING_PROFILES_ACTIVE` | none | Set to `prod` in production to make the three `DB_*` variables mandatory |
+| `CORS_ALLOWED_ORIGINS` | `http://localhost:3000` | Comma-separated browser origins allowed to call the API (see Production) |
 | `JWT_SECRET` | built-in dev value | Token signing key (32+ bytes). Set your own outside development |
 | `JWT_EXPIRY_MINUTES` | `60` | Session length |
 | `ADMIN_PASSWORD` | `admin` | Initial admin password, used on first start only |
+
+## Production (backend) and Vercel (frontend)
+
+Backend: with `SPRING_PROFILES_ACTIVE=prod` the app refuses to start unless `DB_URL`, `DB_USERNAME` and `DB_PASSWORD` are set and not blank. The error names the missing variables, never their values, and there is no `root`/`root` fallback. Set them from your host's secret store, never in git.
+
+```bash
+export SPRING_PROFILES_ACTIVE=prod
+export DB_URL='jdbc:mysql://<db-host>:3306/todo_db?serverTimezone=UTC'
+export DB_USERNAME='<db-user>'
+export DB_PASSWORD='<from your secret store>'
+export CORS_ALLOWED_ORIGINS='https://<your-project>.vercel.app'
+java -jar target/todo-backend-0.0.1-SNAPSHOT.jar
+```
+
+`JWT_SECRET` and `ADMIN_PASSWORD` are not required by `prod` and keep their insecure dev defaults, so set them yourself.
+
+CORS: list your exact frontend origin(s) in `CORS_ALLOWED_ORIGINS` (comma-separated, no path; `https://vercel.app` alone matches nothing). `PATCH` is allowed and `X-Auth-Token` is exposed to the browser. A bare `*` stops startup. For Vercel preview URLs you may opt in to a narrow pattern such as `https://<project>-*-<team>.vercel.app`; avoid `https://*.vercel.app`, which lets every Vercel project call your API. Credentials and cookies are not used.
+
+Frontend on Vercel: set the build variable `VITE_API_BASE_URL` to your backend origin (for example `https://api.example.com`, no trailing slash needed; it is public, never put a secret in it). Left empty, the app calls the relative `/api`, which only works through the local dev proxy. `frontend/vercel.json` makes deep links such as `/tasks` work on refresh.
+
+Alternative without CORS: leave `VITE_API_BASE_URL` empty and rewrite `/api/*` to the backend in `frontend/vercel.json`, placed before the SPA rule:
+
+```json
+{"rewrites":[{"source":"/api/(.*)","destination":"https://<backend-host>/api/$1"},{"source":"/(.*)","destination":"/index.html"}]}
+```
 
 ## Tests
 
@@ -67,7 +94,7 @@ cd frontend
 npm test && npm run build && npm run lint
 ```
 
-Latest results: backend 266 passed (not changed since), frontend 196 passed, no failures. Details are in `reports/`.
+Latest results: backend 279 passed, frontend 205 passed, no failures. Details are in `reports/`.
 
 ## Project layout
 
