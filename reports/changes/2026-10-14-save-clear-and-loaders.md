@@ -26,7 +26,7 @@ Method note: `$B` has no network throttling or request log. I injected a `window
 | S5 B2: search then save within 300 ms | PASS | Staged a task, set search "task 8", clicked Save 100 ms later (list delay 700 ms): requests PATCH, GET `q=task+8`, GET `q=task+8` (stale response ignored, one refetch); final list correct (task completed, dropped off Active tab), search spinner stayed visible during the refetch. |
 | S6 reduced motion | PASS (static check only) | Emulation was not available. Stylesheet inspection: `@media (prefers-reduced-motion: reduce)` has `*{animation:none !important}` and `.spinner{border-style:dotted}`; busy labels ("Saving…") are text. |
 | S7 keyboard | PASS (VoiceOver not tested) | Tab order from the checkbox: Save → Clear → Edit → Delete. Space ticks, Enter on Save sends the PATCH. Focus after Save: checkbox if the task stays in the filter; `.task-list-region` (tabindex -1, label "Tasks") when it dropped out (Completed and Active tabs, admin and own). Live region texts correct. |
-| S8 768 px admin table | PARTIAL, see DEF-C | Tasks cells are `white-space: nowrap` on one line; gap between search box and table is 17 px. But the table (867 px) is wider than its scroll container (684 px) so the Disable and Reset password buttons are cut off. No page-level scroll. |
+| S8 768 px admin table | PARTIAL at first, PASS after the DEF-C fix (section 5b) | Tasks cells are `white-space: nowrap` on one line; gap between search box and table is 17 px. But the table (867 px) is wider than its scroll container (684 px) so the Disable and Reset password buttons are cut off. No page-level scroll. |
 | S9 375 px | PASS | Save/Clear wrap into the actions row, no horizontal scroll (scrollWidth 375), Save 88x44, Clear 61x44. At 768 and 1280 no horizontal scroll, buttons 32 px. |
 
 ## 3. Loaders (2.3) and edge cases (2.2)
@@ -65,7 +65,7 @@ Method note: `$B` has no network throttling or request log. I injected a `window
 
 The existing security probe matrix was not re-run (endpoints unchanged); only the spot-checks above.
 
-## 5. Defects (all sent to `frontend`, team lead copied)
+## 5. Defects (all closed in 5b; all sent to `frontend`, team lead copied)
 
 | ID | Severity | Summary |
 |---|---|---|
@@ -76,6 +76,18 @@ The existing security probe matrix was not re-run (endpoints unchanged); only th
 Observations, not defects: at 375 px Delete is 32 px tall and wraps alone in a staged row while Save/Clear/Edit are 44 px; the polite live region keeps its last message text after it was announced; focus after Cancel on the edit form is on `body`.
 DEF-A and DEF-B need a synthetic same-tick double dispatch; real double clicks go through a separate event and pass.
 
+## 5b. Retest after fixes (master 2c8cdb8, merged into this branch as 8567bbe)
+
+Same stack and method as above (fresh disposable schema, same fetch-wrapper evidence).
+
+| Defect | Result | Evidence |
+|---|---|---|
+| DEF-A | CLOSED (PASS) | Same-tick double click on Save with the PATCH failing: row shows "Saving…" while pending, 1 PATCH, afterwards Save/Clear/chip kept, checkbox in staged state, row error "Not saved. Try again."; same-tick double click with success: 1 PATCH, row saved. |
+| DEF-B | CLOSED (PASS) | Same-tick double dispatch gives exactly one request on: TaskForm Add (1 POST, 1 task), Login (1 POST), Register (1 POST), Change password (1 PUT), Reset password (1 PUT), admin Disable (1 PATCH, confirm dialog). |
+| DEF-C | CLOSED (PASS, cosmetic note) | At 768 the Actions cell stacks View tasks / Disable / Reset password vertically, all visible (`qa_admin768_after_fix.png`); Tasks cell stays `nowrap` on one line; 800, 900, 1024 fit without scrolling; no page-level horizontal scroll. Note: at 768 the table scroll area is still a few pixels wider than its container, and rows are 118 px tall. |
+
+All rows from sections 2-4 that were run before were not repeated except the ones above; the frontend suite on master reports 239 tests (not re-run by QA after the merge).
+
 ## 6. Scenarios not tested / could not be verified
 
 - Real `prefers-reduced-motion` and `prefers-color-scheme: dark` emulation (headless tool lacks it): reduced motion verified from CSS only; dark by overriding tokens.
@@ -83,7 +95,6 @@ DEF-A and DEF-B need a synthetic same-tick double dispatch; real double clicks g
 - VoiceOver or any screen reader; Safari and Firefox; touch devices.
 - Delete failure with a staged change (staged entry should be kept), and Save returning 404 for a task deleted elsewhere (staged entry removed, 404 toast).
 - Edit form "Saving…" label separately, TaskForm failure path, B6b with a checkbox change while the form is open on a different tab.
-- Same-tick double dispatch on Login, Register, Change password, Reset password and Disable/Enable.
 - Admin row loaders at 375 px; the 1024/1280 layouts in dark mode; DEF-3 (toast over dialog) is outside this change.
 - Full security probe matrix re-run (only the plan's spot-checks).
 - `mvn test` uses its own databases; the real `todo_db` was never touched.
