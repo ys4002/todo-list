@@ -1,13 +1,17 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { ApiRequestError } from '../api/apiClient'
 import { adminApi } from '../api/adminApi'
 import type { AdminUser } from '../api/types'
+import { useModalDialog } from '../hooks/useModalDialog'
+import { errorMessageOf, fieldErrorsFrom } from '../utils/formErrors'
 import { validateResetPassword } from '../utils/validation'
 import type { FieldErrors, ResetPasswordField } from '../utils/validation'
 import ErrorBanner from './ErrorBanner'
 import FormField from './FormField'
 import PasswordRulesChecklist from './PasswordRulesChecklist'
+
+const resetPasswordFields: ResetPasswordField[] = ['newPassword', 'confirmNewPassword']
 
 interface Props {
   user: AdminUser
@@ -21,13 +25,7 @@ export default function ResetPasswordDialog({ user, onClose, onSuccess }: Props)
   const [formError, setFormError] = useState<string | null>(null)
   const [pending, setPending] = useState(false)
 
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose()
-    }
-    document.addEventListener('keydown', onKeyDown)
-    return () => document.removeEventListener('keydown', onKeyDown)
-  }, [onClose])
+  useModalDialog(onClose)
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
@@ -43,15 +41,11 @@ export default function ResetPasswordDialog({ user, onClose, onSuccess }: Props)
     } catch (error) {
       setPending(false)
       if (error instanceof ApiRequestError && error.fieldErrors.length > 0) {
-        const serverErrors: FieldErrors<ResetPasswordField> = {}
-        for (const item of error.fieldErrors) {
-          const field = item.field as ResetPasswordField
-          if (field in values && !serverErrors[field]) serverErrors[field] = item.message
-        }
+        const serverErrors = fieldErrorsFrom(error, resetPasswordFields)
         setErrors(serverErrors)
         if (Object.keys(serverErrors).length === 0) setFormError(error.message)
       } else {
-        setFormError(error instanceof Error ? error.message : 'Something went wrong')
+        setFormError(errorMessageOf(error))
       }
     }
   }
@@ -89,7 +83,7 @@ export default function ResetPasswordDialog({ user, onClose, onSuccess }: Props)
           error={errors.confirmNewPassword}
         />
         <div className="dialog-actions">
-          <button type="button" onClick={onClose}>
+          <button type="button" className="ghost" onClick={onClose}>
             Cancel
           </button>
           <button type="submit" className="primary" disabled={pending}>

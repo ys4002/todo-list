@@ -16,7 +16,7 @@ export default function SearchBox({ value, onChange, label, placeholder }: Props
         onChange={(event) => onChange(event.target.value)}
       />
       {value !== '' && (
-        <button type="button" onClick={() => onChange('')}>
+        <button type="button" className="ghost" onClick={() => onChange('')}>
           Clear
         </button>
       )}

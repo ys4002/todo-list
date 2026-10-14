@@ -5,6 +5,7 @@ import { useNow } from '../hooks/useNow'
 import { useTasks } from '../hooks/useTasks'
 import ConfirmDialog from './ConfirmDialog'
 import ErrorBanner from './ErrorBanner'
+import LoadingSkeleton from './LoadingSkeleton'
 import SearchBox from './SearchBox'
 import TaskFilterTabs from './TaskFilterTabs'
 import TaskForm from './TaskForm'
@@ -47,7 +48,7 @@ export default function TasksPanel({ scope }: { scope: TaskScope }) {
         />
       )}
       {loading ? (
-        <p role="status">Loading tasks…</p>
+        <LoadingSkeleton label="Loading tasks…" rows={4} variant="list" />
       ) : (
         <TaskList
           tasks={tasks}

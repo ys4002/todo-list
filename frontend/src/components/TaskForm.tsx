@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import { ApiRequestError } from '../api/apiClient'
 import type { Task, TaskUpdateRequest } from '../api/types'
 import { nowAsDateTimeLocalValue, toDateTimeLocalValue, toIsoUtc } from '../utils/dateUtils'
+import { errorMessageOf, fieldErrorsFrom } from '../utils/formErrors'
 import { validateTask } from '../utils/validation'
 import type { FieldErrors, TaskField } from '../utils/validation'
 import ErrorBanner from './ErrorBanner'
@@ -45,21 +46,17 @@ export default function TaskForm({ task, onSubmit, onCancel }: Props) {
     } catch (error) {
       setPending(false)
       if (error instanceof ApiRequestError && error.fieldErrors.length > 0) {
-        const serverErrors: FieldErrors<TaskField> = {}
-        for (const item of error.fieldErrors) {
-          const field = item.field as TaskField
-          if (taskFields.includes(field) && !serverErrors[field]) serverErrors[field] = item.message
-        }
+        const serverErrors = fieldErrorsFrom(error, taskFields)
         setErrors(serverErrors)
         if (Object.keys(serverErrors).length === 0) setFormError(error.message)
       } else {
-        setFormError(error instanceof Error ? error.message : 'Something went wrong')
+        setFormError(errorMessageOf(error))
       }
     }
   }
 
   return (
-    <form className="card" onSubmit={handleSubmit} noValidate aria-label={mode === 'edit' ? 'Edit task' : 'New task'}>
+    <form className="card task-form" onSubmit={handleSubmit} noValidate aria-label={mode === 'edit' ? 'Edit task' : 'New task'}>
       <h2>{mode === 'edit' ? 'Edit task' : 'New task'}</h2>
       <ErrorBanner message={formError} />
       <FormField id="task-title" label="Title" value={title} onValueChange={setTitle} error={errors.title} />
@@ -79,27 +76,29 @@ export default function TaskForm({ task, onSubmit, onCancel }: Props) {
           </span>
         )}
       </div>
-      <FormField
-        id="task-due"
-        label="Due date and time"
-        type="datetime-local"
-        min={mode === 'create' ? nowAsDateTimeLocalValue() : undefined}
-        value={dueAtLocal}
-        onValueChange={setDueAtLocal}
-        error={errors.dueAt}
-      />
-      {mode === 'edit' && (
-        <div className="field">
-          <label>
-            <input type="checkbox" checked={completed} onChange={(event) => setCompleted(event.target.checked)} /> Completed
-          </label>
-        </div>
-      )}
+      <div className="form-row">
+        <FormField
+          id="task-due"
+          label="Due date and time"
+          type="datetime-local"
+          min={mode === 'create' ? nowAsDateTimeLocalValue() : undefined}
+          value={dueAtLocal}
+          onValueChange={setDueAtLocal}
+          error={errors.dueAt}
+        />
+        {mode === 'edit' && (
+          <div className="field">
+            <label className="checkbox-label">
+              <input type="checkbox" checked={completed} onChange={(event) => setCompleted(event.target.checked)} /> Completed
+            </label>
+          </div>
+        )}
+      </div>
       <div className="form-actions">
         <button type="submit" className="primary" disabled={pending}>
           {mode === 'edit' ? 'Save' : 'Add task'}
         </button>
-        <button type="button" onClick={onCancel}>
+        <button type="button" className="ghost" onClick={onCancel}>
           Cancel
         </button>
       </div>
