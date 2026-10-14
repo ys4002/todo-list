@@ -58,6 +58,7 @@ Plan: `docs/changes/2026-10-14-toast-fixes-and-prod-db-config.md`.
 - **CORS:** allowed origins come from `CORS_ALLOWED_ORIGINS` (default `http://localhost:3000`); exact origins or explicit opt-in patterns, a bare `*` is rejected, no credentials, `PATCH` allowed, `X-Auth-Token`, `X-Auth-Expires-In` and `Location` exposed. Optional under `prod` (localhost default, origins logged at startup).
 - **Frontend:** `VITE_API_BASE_URL` (empty default keeps relative `/api`) and `frontend/vercel.json` SPA fallback.
 - **Test fix:** the "maps 401" session tests in `auth.test.tsx` now wait for the async redirect (intermittent failure in about 3 of 10 runs before; 0 of 12 after).
+- **DEF-3 (low-medium, open):** at about 1024 px wide, if 3 success toasts are showing (bottom-right) and the Reset password dialog is opened within ~5 s, the stack can cover the right part of the dialog's submit button. Toasts pause on hover, close with × or Escape, and expire after 5 s (8 s for errors). Not seen at 768, 1280 or 1440 px.
 - **Known limitations:** in prod `JWT_SECRET` and `ADMIN_PASSWORD` still default to dev values; an unset `CORS_ALLOWED_ORIGINS` allows only localhost; `backend/Dockerfile` (user-added) uses Java 17 images while the project targets Java 21.
 
 ## Known limitations
